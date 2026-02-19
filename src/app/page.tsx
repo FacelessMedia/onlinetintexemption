@@ -46,7 +46,7 @@ const trustFeatures = [
     icon: Shield,
     title: "100% Money-Back Guarantee",
     description:
-      "If our physician determines you don't qualify, you'll receive a full refund. No questions asked.",
+      "Bring legitimate proof of your medical condition. If our physician determines you don't qualify, you'll receive a full refund. No questions asked.",
   },
   {
     icon: Clock,
@@ -68,9 +68,9 @@ const trustFeatures = [
   },
   {
     icon: CheckCircle,
-    title: "Thousands of Happy Customers",
+    title: "Hundreds of Happy Customers",
     description:
-      "We've helped thousands of people across all 50 states get their legal tint exemptions.",
+      "We've helped hundreds of people across all 50 states get their legal tint exemptions.",
   },
   {
     icon: HeadsetIcon,
@@ -115,11 +115,8 @@ const faqItems = [
   },
 ];
 
-const featuredStates = ["california", "florida", "illinois", "michigan", "new-york", "ohio", "pennsylvania", "texas"];
-
 export default function Home() {
   const allStates = getAllStates();
-  const featured = allStates.filter((s) => featuredStates.includes(s.slug));
 
   return (
     <>
@@ -221,17 +218,17 @@ export default function Home() {
               50 states. Select your state to see specific requirements.
             </p>
           </div>
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {featured.map((state) => (
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {allStates.map((state) => (
               <Link
                 key={state.slug}
                 href={`/${state.slug}-window-tint-medical-exemption`}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-primary hover:shadow-lg transition-all"
+                className="group flex items-center gap-2.5 rounded-lg border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {state.abbreviation}
                 </div>
-                <span className="font-medium text-card-foreground text-sm">
+                <span className="font-medium text-card-foreground text-sm truncate">
                   {state.name}
                 </span>
               </Link>
@@ -318,7 +315,7 @@ export default function Home() {
             Ready to Get Your Legal Window Tint Exemption?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of satisfied customers who got their medical tint
+            Join hundreds of satisfied customers who got their medical tint
             exemption through Online Tint Exemption. Fast, legal, and
             hassle-free.
           </p>

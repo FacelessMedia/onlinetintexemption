@@ -85,7 +85,8 @@ export function Header() {
                 States <ChevronDown className="h-4 w-4" />
               </button>
               {statesOpen && (
-                <div className="absolute top-full left-0 mt-1 w-64 rounded-lg border border-border bg-card shadow-lg p-3 z-50">
+                <div className="absolute top-full left-0 pt-2 z-50">
+                <div className="w-64 rounded-lg border border-border bg-card shadow-lg p-3">
                   <div className="grid gap-1">
                     {popularStates.map((state) => (
                       <Link
@@ -98,12 +99,13 @@ export function Header() {
                     ))}
                     <hr className="my-1 border-border" />
                     <Link
-                      href="/"
+                      href="/book"
                       className="block px-3 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md transition-colors"
                     >
                       View All 50 States →
                     </Link>
                   </div>
+                </div>
                 </div>
               )}
             </div>
@@ -118,7 +120,8 @@ export function Header() {
                 Conditions <ChevronDown className="h-4 w-4" />
               </button>
               {conditionsOpen && (
-                <div className="absolute top-full left-0 mt-1 w-72 rounded-lg border border-border bg-card shadow-lg p-3 z-50">
+                <div className="absolute top-full left-0 pt-2 z-50">
+                <div className="w-72 rounded-lg border border-border bg-card shadow-lg p-3">
                   <div className="grid gap-1">
                     {popularConditions.map((condition) => (
                       <Link
@@ -137,6 +140,7 @@ export function Header() {
                       View All Conditions →
                     </Link>
                   </div>
+                </div>
                 </div>
               )}
             </div>
@@ -210,6 +214,13 @@ export function Header() {
                 {state.name}
               </Link>
             ))}
+            <Link
+              href="/book"
+              onClick={() => setMobileOpen(false)}
+              className="block px-6 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md"
+            >
+              View All 50 States →
+            </Link>
             <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Conditions
             </div>
