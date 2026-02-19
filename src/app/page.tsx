@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Shield,
@@ -14,6 +15,53 @@ import {
 } from "lucide-react";
 import { getAllStates } from "@/data/states";
 import { USMap } from "@/components/us-map";
+
+export const metadata: Metadata = {
+  title: "Medical Window Tint Exemption Online | All 50 States | Online Tint Exemption",
+  description:
+    "Get your legal medical window tint exemption online from a licensed physician. Fast 24-48 hour approval, 100% money-back guarantee. Serving all 50 states. $249 flat rate.",
+  keywords: [
+    "medical window tint exemption",
+    "window tint medical exemption online",
+    "tint exemption certificate",
+    "medical tint permit",
+    "window tint prescription",
+    "tint exemption all 50 states",
+    "legal window tint exemption",
+    "photosensitivity tint exemption",
+    "lupus window tint",
+    "migraine window tint exemption",
+  ],
+  alternates: {
+    canonical: "https://www.onlinetintexemption.com",
+  },
+  openGraph: {
+    title: "Medical Window Tint Exemption Online | Online Tint Exemption",
+    description:
+      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, all 50 states, $249.",
+    url: "https://www.onlinetintexemption.com",
+    siteName: "Online Tint Exemption",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Medical Window Tint Exemption Online | Online Tint Exemption",
+    description:
+      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, all 50 states.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
 
 const steps = [
   {
@@ -119,8 +167,108 @@ const faqItems = [
 export default function Home() {
   const allStates = getAllStates();
 
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "MedicalBusiness",
+    name: "Online Tint Exemption",
+    url: "https://www.onlinetintexemption.com",
+    logo: "https://www.onlinetintexemption.com/logo.png",
+    description:
+      "Licensed telemedicine service providing medical window tint exemption certificates for all 50 US states.",
+    telephone: "+1-734-338-8453",
+    email: "support@onlinetintexemption.com",
+    founder: {
+      "@type": "Person",
+      name: "Toriano Dewberry",
+      jobTitle: "Founder & Licensed Optician",
+    },
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "US",
+    },
+    areaServed: {
+      "@type": "Country",
+      name: "United States",
+    },
+    priceRange: "$249",
+    sameAs: [],
+  };
+
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "MedicalProcedure",
+    name: "Medical Window Tint Exemption Consultation",
+    description:
+      "Online telemedicine consultation with a licensed physician to obtain a medical window tint exemption certificate.",
+    howPerformed:
+      "Remote telemedicine consultation via phone with a board-certified physician.",
+    procedureType: "https://schema.org/NoninvasiveProcedure",
+    provider: {
+      "@type": "MedicalBusiness",
+      name: "Online Tint Exemption",
+      url: "https://www.onlinetintexemption.com",
+    },
+    offers: {
+      "@type": "Offer",
+      price: "249",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://www.onlinetintexemption.com/book",
+    },
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://www.onlinetintexemption.com",
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationSchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(serviceSchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-background">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />

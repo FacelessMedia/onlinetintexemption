@@ -34,9 +34,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!slug) return {};
   const state = getStateBySlug(slug);
   if (!state) return {};
+  const canonical = `https://www.onlinetintexemption.com/${state.slug}-window-tint-medical-exemption`;
   return {
     title: `${state.name} Window Tint Medical Exemption Guide 2026`,
-    description: state.heroDescription,
+    description: `Get your ${state.name} medical window tint exemption online. ${state.heroDescription} Fast approval, $249 flat rate.`,
+    keywords: [
+      `${state.name} window tint exemption`,
+      `${state.name} medical tint exemption`,
+      `${state.name} tint laws`,
+      `${state.name} window tint medical exemption`,
+      `${state.abbreviation} tint exemption`,
+      "medical window tint exemption",
+      "window tint prescription",
+    ],
+    alternates: { canonical },
+    openGraph: {
+      title: `${state.name} Window Tint Medical Exemption Guide 2026`,
+      description: state.heroDescription,
+      url: canonical,
+      siteName: "Online Tint Exemption",
+      type: "article",
+      locale: "en_US",
+    },
+    twitter: {
+      card: "summary",
+      title: `${state.name} Window Tint Medical Exemption`,
+      description: state.heroDescription,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
@@ -48,8 +76,60 @@ export default async function StatePage({ params }: PageProps) {
   const state = getStateBySlug(slug);
   if (!state) notFound();
 
+  const pageUrl = `https://www.onlinetintexemption.com/${state.slug}-window-tint-medical-exemption`;
+
+  const stateSchema = {
+    "@context": "https://schema.org",
+    "@type": "MedicalWebPage",
+    name: `${state.name} Window Tint Medical Exemption Guide`,
+    description: state.heroDescription,
+    url: pageUrl,
+    mainEntity: {
+      "@type": "MedicalProcedure",
+      name: `${state.name} Medical Window Tint Exemption`,
+      description: state.whatIsExemption,
+      howPerformed: "Remote telemedicine consultation via phone with a board-certified physician.",
+      procedureType: "https://schema.org/NoninvasiveProcedure",
+      provider: {
+        "@type": "MedicalBusiness",
+        name: "Online Tint Exemption",
+        url: "https://www.onlinetintexemption.com",
+        telephone: "+1-734-338-8453",
+      },
+      offers: {
+        "@type": "Offer",
+        price: "249",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url: `https://www.onlinetintexemption.com/book/${state.slug}`,
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.onlinetintexemption.com" },
+      { "@type": "ListItem", position: 2, name: state.name, item: pageUrl },
+    ],
+  };
+
+  const faqSchema = state.faq.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: state.faq.map((f: { question: string; answer: string }) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  } : null;
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(stateSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
       {/* Hero */}
       <section className="bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">

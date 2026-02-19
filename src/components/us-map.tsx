@@ -74,26 +74,26 @@ export function USMap() {
                   }}
                   style={{
                     default: {
-                      fill: "hsl(var(--primary) / 0.15)",
-                      stroke: "hsl(var(--border))",
+                      fill: "color-mix(in srgb, var(--primary) 25%, var(--background))",
+                      stroke: "color-mix(in srgb, var(--primary) 40%, var(--border))",
                       strokeWidth: 0.75,
                       outline: "none",
                       cursor: state ? "pointer" : "default",
                       transition: "all 0.2s ease",
                     },
                     hover: {
-                      fill: "hsl(var(--primary) / 0.6)",
-                      stroke: "hsl(var(--primary))",
+                      fill: "color-mix(in srgb, var(--primary) 55%, var(--background))",
+                      stroke: "var(--primary)",
                       strokeWidth: 1.5,
                       outline: "none",
                       cursor: "pointer",
-                      filter: "drop-shadow(0 4px 8px hsl(var(--primary) / 0.3))",
+                      filter: "drop-shadow(0 4px 12px color-mix(in srgb, var(--primary) 50%, transparent))",
                       transform: "translateY(-2px)",
                       transition: "all 0.2s ease",
                     },
                     pressed: {
-                      fill: "hsl(var(--primary) / 0.8)",
-                      stroke: "hsl(var(--primary))",
+                      fill: "color-mix(in srgb, var(--primary) 70%, var(--background))",
+                      stroke: "var(--primary)",
                       strokeWidth: 2,
                       outline: "none",
                     },

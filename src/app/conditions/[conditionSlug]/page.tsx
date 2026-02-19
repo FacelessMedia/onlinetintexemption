@@ -16,9 +16,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const resolved = await params;
   const condition = getConditionBySlug(resolved.conditionSlug);
   if (!condition) return {};
+  const canonical = `https://www.onlinetintexemption.com/conditions/${condition.slug}`;
   return {
     title: condition.metaTitle,
-    description: condition.shortDescription,
+    description: `${condition.shortDescription} Learn how ${condition.name} qualifies for a medical window tint exemption. Fast online approval, $249.`,
+    keywords: [
+      `${condition.name} window tint exemption`,
+      `${condition.name} tint exemption`,
+      `${condition.name} medical exemption`,
+      `${condition.name} driving`,
+      "medical window tint exemption",
+      "tint exemption for medical condition",
+    ],
+    alternates: { canonical },
+    openGraph: {
+      title: condition.metaTitle,
+      description: condition.shortDescription,
+      url: canonical,
+      siteName: "Online Tint Exemption",
+      type: "article",
+      locale: "en_US",
+    },
+    twitter: {
+      card: "summary",
+      title: condition.metaTitle,
+      description: condition.shortDescription,
+    },
+    robots: { index: true, follow: true },
   };
 }
 
@@ -27,8 +51,62 @@ export default async function ConditionPage({ params }: PageProps) {
   const condition = getConditionBySlug(resolved.conditionSlug);
   if (!condition) notFound();
 
+  const pageUrl = `https://www.onlinetintexemption.com/conditions/${condition.slug}`;
+
+  const conditionSchema = {
+    "@context": "https://schema.org",
+    "@type": "MedicalWebPage",
+    name: condition.heroTitle,
+    description: condition.heroDescription,
+    url: pageUrl,
+    about: {
+      "@type": "MedicalCondition",
+      name: condition.name,
+      description: condition.understandingSection,
+      possibleTreatment: {
+        "@type": "MedicalTherapy",
+        name: "Medical Window Tint Exemption",
+        description: condition.howToGet,
+      },
+    },
+    mainEntity: {
+      "@type": "MedicalProcedure",
+      name: `Window Tint Exemption for ${condition.name}`,
+      description: condition.howToGet,
+      procedureType: "https://schema.org/NoninvasiveProcedure",
+      provider: {
+        "@type": "MedicalBusiness",
+        name: "Online Tint Exemption",
+        url: "https://www.onlinetintexemption.com",
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.onlinetintexemption.com" },
+      { "@type": "ListItem", position: 2, name: "Conditions", item: "https://www.onlinetintexemption.com/conditions" },
+      { "@type": "ListItem", position: 3, name: condition.name, item: pageUrl },
+    ],
+  };
+
+  const faqSchema = condition.faq.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: condition.faq.map((f: { question: string; answer: string }) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  } : null;
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(conditionSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
       {/* Hero */}
       <section className="bg-background py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
