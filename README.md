@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Online Tint Exemption — onlinetintexemption.com
 
-## Getting Started
+Medical window tint exemption telemedicine platform. Next.js 16, TailwindCSS, dark/light mode (dark default).
 
-First, run the development server:
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build (135 static pages)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **JSON-driven templates** — All state, condition, and booking pages are built from TypeScript data files in `src/data/`. Nothing is hardcoded except the design.
+- **Data files:**
+  - `src/data/states.ts` — 51 states (50 + DC) with tint laws, FAQs, conditions, nearby states
+  - `src/data/conditions.ts` — 16 medical conditions with full content
+  - `src/data/blog.ts` — Blog posts and categories
+- **Dynamic routes:**
+  - `/[stateSlug]` → State info pages (e.g., `/ohio-window-tint-medical-exemption`)
+  - `/book/[stateSlug]` → State booking pages (e.g., `/book/ohio`)
+  - `/conditions/[conditionSlug]` → Condition pages (e.g., `/conditions/migraines`)
+  - `/blog/[slug]` → Blog post pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+- **GitHub:** https://github.com/FacelessMedia/onlinetintexemption
+- **Vercel:** Auto-deploys from `master` branch
+- **Production:** https://onlinetintexemption.vercel.app
 
-To learn more about Next.js, take a look at the following resources:
+### Custom Domain Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Go to https://vercel.com/dashboard → Select project → Settings → Domains
+2. Add `www.onlinetintexemption.com` and `onlinetintexemption.com`
+3. Update DNS records at your domain registrar:
+   - `A` record: `76.76.21.21` (for apex domain)
+   - `CNAME` record: `cname.vercel-dns.com` (for www subdomain)
+4. Vercel will auto-issue SSL certificate
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- Next.js 16 (App Router, SSR/SSG)
+- TailwindCSS v4 with CSS custom properties
+- next-themes (dark mode default)
+- Lucide React icons
+- TypeScript
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Integrations (Pending)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Go High Level** — Forms, payments, CRM pipeline (booking pages have GHL placeholders)
+- **QuickBooks** — Accounting sync via GHL
+- **ChatGPT** — Chatbot with custom knowledge base (future phase)
+
+## Key Info
+
+- **Brand:** Online Tint Exemption
+- **Email:** support@onlinetintexemption.com
+- **Phone:** (734) 338-8453
+- **Pricing:** $249 flat rate, all states
+- **No HIPAA claims** — removed per compliance requirement
+
+## Page Count: 135 Static Pages
+
+| Type | Count |
+|------|-------|
+| Core pages | 7 (home, about, faq, contact, conditions, book, blog) |
+| State info pages | 51 |
+| State booking pages | 51 |
+| Condition pages | 15 |
+| Blog posts | 4 |
+| Team profiles | 2 |
+| Legal pages | 2 |
+| Blog hub categories | 8 (planned) |
