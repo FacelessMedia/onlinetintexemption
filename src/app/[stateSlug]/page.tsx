@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const state = getStateBySlug(slug);
   if (!state) return {};
   return {
-    title: `${state.name} Window Tint Medical Exemption Guide 2025`,
+    title: `${state.name} Window Tint Medical Exemption Guide 2026`,
     description: state.heroDescription,
   };
 }
@@ -105,7 +105,7 @@ export default async function StatePage({ params }: PageProps) {
             {/* Tint Laws */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                {state.name} Window Tint Laws in 2025
+                {state.name} Window Tint Laws in 2026
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
                 {state.tintLawsDescription}
@@ -163,7 +163,7 @@ export default async function StatePage({ params }: PageProps) {
             {/* How To */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                How to Get Your {state.name} Tint Exemption in 2025
+                How to Get Your {state.name} Tint Exemption in 2026
               </h2>
               <p className="text-muted-foreground mb-6">
                 Obtaining a medical tint exemption in {state.name} involves several straightforward steps.

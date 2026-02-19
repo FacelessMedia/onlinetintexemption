@@ -161,7 +161,7 @@ export function Footer() {
             <p>
               Medical Disclaimer: This service provides telemedicine consultations with licensed physicians. Exemption approval is based on medical evaluation.
             </p>
-            <p className="shrink-0">© 2025 Online Tint Exemption. All rights reserved.</p>
+            <p className="shrink-0">© 2026 Online Tint Exemption. All rights reserved.</p>
           </div>
         </div>
       </div>

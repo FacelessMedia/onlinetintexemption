@@ -92,7 +92,7 @@ export default async function ConditionPage({ params }: PageProps) {
 
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                How to Get a Tint Exemption for {condition.name} in 2025
+                How to Get a Tint Exemption for {condition.name} in 2026
               </h2>
               <p className="text-muted-foreground leading-relaxed">
                 {condition.howToGet}

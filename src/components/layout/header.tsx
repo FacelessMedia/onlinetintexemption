@@ -99,7 +99,7 @@ export function Header() {
                     ))}
                     <hr className="my-1 border-border" />
                     <Link
-                      href="/book"
+                      href="/#states"
                       className="block px-3 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md transition-colors"
                     >
                       View All 50 States →
@@ -215,7 +215,7 @@ export function Header() {
               </Link>
             ))}
             <Link
-              href="/book"
+              href="/#states"
               onClick={() => setMobileOpen(false)}
               className="block px-6 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md"
             >

@@ -20,8 +20,8 @@ export default function RefundPolicyPage() {
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8">Refund Policy</h1>
 
         <div className="space-y-6 text-muted-foreground leading-relaxed">
-          <p><strong className="text-foreground">Effective Date:</strong> January 1, 2025</p>
-          <p><strong className="text-foreground">Last Updated:</strong> January 1, 2025</p>
+          <p><strong className="text-foreground">Effective Date:</strong> January 1, 2026</p>
+          <p><strong className="text-foreground">Last Updated:</strong> January 1, 2026</p>
 
           <h2 className="text-xl font-bold text-foreground pt-4">100% Money-Back Guarantee</h2>
           <p>

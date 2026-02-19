@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { getAllStates } from "@/data/states";
+import { USMap } from "@/components/us-map";
 
 const steps = [
   {
@@ -207,7 +208,7 @@ export default function Home() {
       </section>
 
       {/* Select Your State */}
-      <section className="bg-background py-20 sm:py-24">
+      <section id="states" className="bg-background py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
@@ -218,7 +219,13 @@ export default function Home() {
               50 states. Select your state to see specific requirements.
             </p>
           </div>
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {/* Interactive Map - Desktop only */}
+          <div className="mt-12 hidden lg:block">
+            <USMap />
+          </div>
+
+          {/* Grid - Mobile / Tablet */}
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:hidden">
             {allStates.map((state) => (
               <Link
                 key={state.slug}

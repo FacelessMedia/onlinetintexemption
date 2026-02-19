@@ -20,8 +20,8 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8">Privacy Policy</h1>
 
         <div className="space-y-6 text-muted-foreground leading-relaxed">
-          <p><strong className="text-foreground">Effective Date:</strong> January 1, 2025</p>
-          <p><strong className="text-foreground">Last Updated:</strong> January 1, 2025</p>
+          <p><strong className="text-foreground">Effective Date:</strong> January 1, 2026</p>
+          <p><strong className="text-foreground">Last Updated:</strong> January 1, 2026</p>
 
           <p>
             Online Tint Exemption (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects your privacy and is committed to
