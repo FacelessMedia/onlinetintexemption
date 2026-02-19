@@ -1,123 +1,152 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { getAllStates } from "@/data/states";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+} from "react-simple-maps";
 
-// Grid positions for US map layout (row, col) - 11 cols x 8 rows
-const statePositions: Record<string, [number, number]> = {
-  AK: [0, 0], HI: [7, 0],
-  WA: [0, 1], OR: [1, 1], CA: [2, 1],
-  MT: [0, 2], ID: [1, 2], NV: [2, 2], UT: [3, 2], AZ: [4, 2],
-  WY: [0, 3], CO: [3, 3], NM: [4, 3],
-  ND: [0, 4], SD: [1, 4], NE: [2, 4], KS: [3, 4], OK: [4, 4], TX: [5, 4],
-  MN: [0, 5], IA: [1, 5], MO: [2, 5], AR: [3, 5], LA: [4, 5],
-  WI: [0, 6], IL: [1, 6], MS: [3, 6], 
-  MI: [0, 7], IN: [1, 7], KY: [2, 7], TN: [3, 7], AL: [4, 7],
-  OH: [1, 8], WV: [2, 8], NC: [3, 8], GA: [4, 8], FL: [5, 8],
-  PA: [1, 9], VA: [2, 9], SC: [3, 9],
-  NY: [0, 9], NJ: [2, 10], MD: [3, 10], DE: [4, 10],
-  VT: [0, 10], NH: [0, 11], MA: [1, 11], CT: [2, 11], RI: [3, 11], ME: [0, 12],
-  DC: [4, 9],
+const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+const stateNameToAbbr: Record<string, string> = {
+  Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
+  Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
+  Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
+  Kansas: "KS", Kentucky: "KY", Louisiana: "LA", Maine: "ME", Maryland: "MD",
+  Massachusetts: "MA", Michigan: "MI", Minnesota: "MN", Mississippi: "MS",
+  Missouri: "MO", Montana: "MT", Nebraska: "NE", Nevada: "NV",
+  "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+  "North Carolina": "NC", "North Dakota": "ND", Ohio: "OH", Oklahoma: "OK",
+  Oregon: "OR", Pennsylvania: "PA", "Rhode Island": "RI", "South Carolina": "SC",
+  "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
+  Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
+  Wyoming: "WY", "District of Columbia": "DC",
 };
 
 export function USMap() {
+  const router = useRouter();
   const allStates = getAllStates();
   const [hovered, setHovered] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  const stateMap = Object.fromEntries(allStates.map((s) => [s.abbreviation, s]));
+  const stateByAbbr = Object.fromEntries(
+    allStates.map((s) => [s.abbreviation, s])
+  );
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setTooltipPos({ x: e.clientX, y: e.clientY });
-  };
+  }, []);
+
+  const hoveredState = hovered ? stateByAbbr[hovered] : null;
 
   return (
-    <div className="relative">
-      <div
-        className="grid gap-1"
-        style={{
-          gridTemplateColumns: "repeat(13, 1fr)",
-          gridTemplateRows: "repeat(8, 1fr)",
-        }}
-        onMouseMove={handleMouseMove}
+    <div className="relative" onMouseMove={handleMouseMove}>
+      <ComposableMap
+        projection="geoAlbersUsa"
+        projectionConfig={{ scale: 1000 }}
+        width={800}
+        height={500}
+        style={{ width: "100%", height: "auto" }}
       >
-        {/* Render empty cells for the full grid */}
-        {Array.from({ length: 8 * 13 }).map((_, i) => {
-          const row = Math.floor(i / 13);
-          const col = i % 13;
+        <Geographies geography={GEO_URL}>
+          {({ geographies }) =>
+            geographies.map((geo) => {
+              const stateName = geo.properties.name;
+              const abbr = stateNameToAbbr[stateName];
+              const state = abbr ? stateByAbbr[abbr] : null;
+              const isHovered = hovered === abbr;
 
-          const entry = Object.entries(statePositions).find(
-            ([, [r, c]]) => r === row && c === col
-          );
-
-          if (!entry) {
-            return <div key={i} className="aspect-square" />;
+              return (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  onMouseEnter={() => abbr && setHovered(abbr)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => {
+                    if (state) {
+                      router.push(
+                        `/${state.slug}-window-tint-medical-exemption`
+                      );
+                    }
+                  }}
+                  style={{
+                    default: {
+                      fill: "hsl(var(--primary) / 0.15)",
+                      stroke: "hsl(var(--border))",
+                      strokeWidth: 0.75,
+                      outline: "none",
+                      cursor: state ? "pointer" : "default",
+                      transition: "all 0.2s ease",
+                    },
+                    hover: {
+                      fill: "hsl(var(--primary) / 0.6)",
+                      stroke: "hsl(var(--primary))",
+                      strokeWidth: 1.5,
+                      outline: "none",
+                      cursor: "pointer",
+                      filter: "drop-shadow(0 4px 8px hsl(var(--primary) / 0.3))",
+                      transform: "translateY(-2px)",
+                      transition: "all 0.2s ease",
+                    },
+                    pressed: {
+                      fill: "hsl(var(--primary) / 0.8)",
+                      stroke: "hsl(var(--primary))",
+                      strokeWidth: 2,
+                      outline: "none",
+                    },
+                  }}
+                />
+              );
+            })
           }
+        </Geographies>
+      </ComposableMap>
 
-          const [abbr] = entry;
-          const state = stateMap[abbr];
-          if (!state) {
-            return <div key={i} className="aspect-square" />;
-          }
-
-          const isHovered = hovered === abbr;
-
-          return (
-            <Link
-              key={abbr}
-              href={`/${state.slug}-window-tint-medical-exemption`}
-              className={`aspect-square rounded-md flex flex-col items-center justify-center text-center transition-all duration-150 cursor-pointer border ${
-                isHovered
-                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-110 z-10"
-                  : "bg-card/80 text-card-foreground border-border hover:border-primary/50"
-              }`}
-              onMouseEnter={() => setHovered(abbr)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <span className={`font-bold text-sm leading-none ${isHovered ? "text-primary-foreground" : "text-primary"}`}>
-                {abbr}
-              </span>
-              <span className="text-[8px] leading-tight mt-0.5 opacity-70 hidden xl:block">
-                {state.name.length > 8 ? state.name.slice(0, 7) + "…" : state.name}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Tooltip */}
-      {hovered && stateMap[hovered] && (
+      {/* Hover Tooltip Card */}
+      {hoveredState && (
         <div
           className="fixed z-50 pointer-events-none"
-          style={{ left: tooltipPos.x + 16, top: tooltipPos.y - 10 }}
+          style={{ left: tooltipPos.x + 20, top: tooltipPos.y - 20 }}
         >
-          <div className="bg-card border border-border rounded-lg shadow-xl p-3 w-56">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-sm">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 w-64 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-base">
                 {hovered}
               </span>
               <div>
-                <div className="font-semibold text-sm text-card-foreground">
-                  {stateMap[hovered].name}
+                <div className="font-bold text-base text-card-foreground leading-tight">
+                  {hoveredState.name}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Window Tint Exemption
+                  Medical Tint Exemption
                 </div>
               </div>
             </div>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div className="flex justify-between">
-                <span>Front Windows:</span>
-                <span className="text-foreground font-medium">{stateMap[hovered].tintLaws.frontSideWindows}</span>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Front Windows</span>
+                <span className="text-card-foreground font-semibold">
+                  {hoveredState.tintLaws.frontSideWindows}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Ticket Fine:</span>
-                <span className="text-foreground font-medium">{stateMap[hovered].ticketFine}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Ticket Fine</span>
+                <span className="text-card-foreground font-semibold">
+                  {hoveredState.ticketFine}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Duration</span>
+                <span className="text-card-foreground font-semibold">
+                  {hoveredState.exemptionDuration}
+                </span>
               </div>
             </div>
-            <div className="mt-2 text-xs text-primary font-medium">
-              Click to learn more →
+            <div className="mt-3 pt-2 border-t border-border text-xs text-primary font-semibold flex items-center gap-1">
+              Click to view full details →
             </div>
           </div>
         </div>
