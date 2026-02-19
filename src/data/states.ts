@@ -3,6 +3,7 @@ export interface StateData {
   abbreviation: string;
   slug: string;
   offered: boolean;
+  allowsMedicalExemption: boolean;
   price: number;
   originalPrice: number;
   heroTitle: string;
@@ -49,6 +50,7 @@ export const states: Record<string, StateData> = {
     abbreviation: "OH",
     slug: "ohio",
     offered: true,
+    allowsMedicalExemption: true,
     price: 249,
     originalPrice: 349,
     heroTitle: "Secure Your Medical Tint Exemption in Ohio Today",
@@ -108,6 +110,7 @@ export const states: Record<string, StateData> = {
     abbreviation: "TX",
     slug: "texas",
     offered: true,
+    allowsMedicalExemption: true,
     price: 249,
     originalPrice: 349,
     heroTitle: "Unlock Your Comfort with Texas Window Tint Exemptions",
@@ -167,6 +170,7 @@ export const states: Record<string, StateData> = {
     abbreviation: "CA",
     slug: "california",
     offered: true,
+    allowsMedicalExemption: true,
     price: 249,
     originalPrice: 349,
     heroTitle: "Secure Your Medical Window Tint Exemption in California",
@@ -225,6 +229,7 @@ export const states: Record<string, StateData> = {
     abbreviation: "FL",
     slug: "florida",
     offered: true,
+    allowsMedicalExemption: true,
     price: 249,
     originalPrice: 349,
     heroTitle: "Get Your Medical Window Tint Exemption in Florida",
@@ -281,8 +286,62 @@ export const states: Record<string, StateData> = {
   },
 };
 
+// Real tint law data per state (by abbreviation)
+const tintData: Record<string, { front: string; back: string; rear: string; windshield: string; fine: string; exemption: boolean; duration: string; dmv: string }> = {
+  AL: { front: "32% VLT", back: "32% VLT", rear: "32% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100–$200", exemption: true, duration: "1 year", dmv: "Keep in vehicle" },
+  AK: { front: "70% VLT", back: "40% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "Up to $300", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  AZ: { front: "33% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  AR: { front: "25% VLT", back: "25% VLT", rear: "10% VLT", windshield: "25% VLT above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  CA: { front: "70% VLT", back: "Any darkness", rear: "Any darkness", windshield: "70% VLT on top 4 inches", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  CO: { front: "27% VLT", back: "27% VLT", rear: "27% VLT", windshield: "Non-reflective above AS-1 line", fine: "Up to $500", exemption: true, duration: "2 years", dmv: "Keep in vehicle" },
+  CT: { front: "35% VLT", back: "35% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Carry exemption certificate" },
+  DE: { front: "70% VLT", back: "70% VLT", rear: "70% VLT", windshield: "Non-reflective above AS-1 line", fine: "$115", exemption: true, duration: "2 years", dmv: "Register with DMV" },
+  FL: { front: "28% VLT", back: "15% VLT", rear: "15% VLT", windshield: "Non-reflective above AS-1 line", fine: "$116", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  GA: { front: "32% VLT", back: "32% VLT", rear: "32% VLT", windshield: "Non-reflective above AS-1 line (6 inches)", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  HI: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  ID: { front: "35% VLT", back: "20% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$90", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  IL: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line (6 inches)", fine: "$164", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  IN: { front: "30% VLT", back: "30% VLT", rear: "30% VLT", windshield: "Non-reflective above AS-1 line", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  IA: { front: "70% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$127", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  KS: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$75", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  KY: { front: "35% VLT", back: "18% VLT", rear: "18% VLT", windshield: "Non-reflective above AS-1 line", fine: "$179", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  LA: { front: "40% VLT", back: "25% VLT", rear: "12% VLT", windshield: "Non-reflective above AS-1 line", fine: "$350", exemption: true, duration: "2 years", dmv: "Keep in vehicle" },
+  ME: { front: "35% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$100–$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  MD: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "Up to $500", exemption: true, duration: "Per physician recommendation", dmv: "Register with MVA" },
+  MA: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Register with RMV" },
+  MI: { front: "Any darkness", back: "Any darkness", rear: "Any darkness", windshield: "4-inch tint strip at top", fine: "$115", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  MN: { front: "50% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  MS: { front: "28% VLT", back: "28% VLT", rear: "28% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  MO: { front: "35% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$75", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  MT: { front: "24% VLT", back: "14% VLT", rear: "14% VLT", windshield: "Non-reflective above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  NE: { front: "35% VLT", back: "20% VLT", rear: "20% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  NV: { front: "35% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  NH: { front: "70% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective tint not permitted below AS-1 line", fine: "$124", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
+  NJ: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "Up to $1,000", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
+  NM: { front: "20% VLT", back: "20% VLT", rear: "20% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  NY: { front: "70% VLT", back: "70% VLT", rear: "Any darkness", windshield: "Non-reflective above top 6 inches", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Carry Form MV-80W" },
+  NC: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  ND: { front: "50% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  OH: { front: "50% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$120", exemption: true, duration: "Per physician recommendation", dmv: "Not required" },
+  OK: { front: "25% VLT", back: "25% VLT", rear: "25% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  OR: { front: "35% VLT", back: "35% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$360", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  PA: { front: "70% VLT", back: "70% VLT", rear: "70% VLT", windshield: "Non-reflective above AS-1 line", fine: "$110", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  RI: { front: "70% VLT", back: "70% VLT", rear: "70% VLT", windshield: "Non-reflective above AS-1 line", fine: "$85", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  SC: { front: "27% VLT", back: "27% VLT", rear: "27% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  SD: { front: "35% VLT", back: "20% VLT", rear: "20% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  TN: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  TX: { front: "25% VLT", back: "25% VLT", rear: "Any darkness", windshield: "25% VLT above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Not required" },
+  UT: { front: "43% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$120", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  VT: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "$162", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
+  VA: { front: "50% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$110", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  WA: { front: "24% VLT", back: "24% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line (6 inches)", fine: "$136", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  WV: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  WI: { front: "50% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$175", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  WY: { front: "28% VLT", back: "28% VLT", rear: "28% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+  DC: { front: "70% VLT", back: "50% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+};
+
 // Generate stub entries for remaining states
-const stateStubs: Omit<StateData, "slug">[] = [];
 
 const allStatesBase: { name: string; abbreviation: string; slug: string; offered: boolean; nearbyStates: { name: string; abbreviation: string; slug: string }[] }[] = [
   { name: "Alabama", abbreviation: "AL", slug: "alabama", offered: true, nearbyStates: [{ name: "Florida", abbreviation: "FL", slug: "florida" }, { name: "Georgia", abbreviation: "GA", slug: "georgia" }, { name: "Tennessee", abbreviation: "TN", slug: "tennessee" }, { name: "Mississippi", abbreviation: "MS", slug: "mississippi" }] },
@@ -335,54 +394,84 @@ const allStatesBase: { name: string; abbreviation: string; slug: string; offered
 ];
 
 function generateDefaultState(base: typeof allStatesBase[0]): StateData {
+  const td = tintData[base.abbreviation];
+  const allowsExemption = td ? td.exemption : true;
+
   return {
     ...base,
+    allowsMedicalExemption: allowsExemption,
     price: 249,
     originalPrice: 349,
-    heroTitle: `Get Your Medical Window Tint Exemption in ${base.name}`,
-    heroDescription: `If you suffer from light sensitivity, driving in ${base.name} can be challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.`,
+    heroTitle: allowsExemption
+      ? `Get Your Medical Window Tint Exemption in ${base.name}`
+      : `${base.name} Window Tint Laws — No Medical Exemption Available`,
+    heroDescription: allowsExemption
+      ? `If you suffer from light sensitivity, driving in ${base.name} can be challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.`
+      : `${base.name} does not currently offer a medical exemption for window tint. Learn about the state's tint laws and your options.`,
     tintLaws: {
-      frontWindshield: "Non-reflective above AS-1 line",
-      frontSideWindows: "Varies — check state law",
-      backSideWindows: "Varies — check state law",
-      rearWindow: "Varies — check state law",
+      frontWindshield: td ? td.windshield : "Non-reflective above AS-1 line",
+      frontSideWindows: td ? td.front : "Check state law",
+      backSideWindows: td ? td.back : "Check state law",
+      rearWindow: td ? td.rear : "Check state law",
     },
-    ticketFine: "Varies",
-    dmvFiling: "Varies — check state requirements",
-    exemptionDuration: "Per physician recommendation",
-    qualifyingConditions: [
+    ticketFine: td ? td.fine : "Varies by state",
+    dmvFiling: td ? td.dmv : "Check state requirements",
+    exemptionDuration: td ? td.duration : "Per physician recommendation",
+    qualifyingConditions: allowsExemption ? [
       { name: "Lupus", description: "An autoimmune disease that causes extreme sensitivity to sunlight and UV radiation." },
       { name: "Photosensitivity", description: "Increased sensitivity to light causing adverse reactions such as rashes, headaches, or seizures." },
       { name: "Albinism", description: "A genetic condition causing lack of melanin, resulting in extreme sensitivity to sunlight." },
       { name: "Eye Conditions", description: "Conditions such as cataracts or macular degeneration that cause heightened light sensitivity." },
       { name: "Skin Conditions", description: "Dermatological conditions exacerbated by sunlight exposure." },
+    ] : [],
+    understandingSection: allowsExemption
+      ? `In ${base.name}, window tint exemptions are available for residents with medical conditions that cause light sensitivity. Front side windows must allow at least ${td ? td.front : "the state-required VLT"} of light, while back windows require ${td ? td.back : "the state-required VLT"}. Violations can result in fines of ${td ? td.fine : "varying amounts"}. If you have a qualifying medical condition, obtaining an exemption allows you to legally have darker tints for safer, more comfortable driving.`
+      : `${base.name} does not currently have a provision for medical window tint exemptions. Even with a doctor's note, the state does not allow darker tints beyond the standard legal limits. Front side windows must allow at least ${td ? td.front : "the required amount"} of light. Violations can result in fines of ${td ? td.fine : "varying amounts"}. If you live in ${base.name} and suffer from light sensitivity, consider other protective measures such as UV-blocking clear film, polarized sunglasses, or sun visors.`,
+    whatIsExemption: allowsExemption
+      ? `A medical window tint exemption in ${base.name} allows individuals with specific medical conditions to have darker window tints than what is typically permitted by state law. Standard limits require front side windows to allow at least ${td ? td.front : "a certain percentage"} of visible light. With a valid medical exemption from a licensed physician, these limits can be relaxed to accommodate your medical needs.`
+      : `${base.name} does not offer medical window tint exemptions. The state's tint laws apply uniformly to all drivers regardless of medical conditions. Front side windows must allow ${td ? td.front : "the required amount"} of light, with no exceptions for medical needs.`,
+    tintLawsDescription: td
+      ? `${base.name}'s window tint laws in 2026 set specific limits on visible light transmission (VLT). Front side windows must allow at least ${td.front}, back side windows require ${td.back}, and the rear window requires ${td.rear}. The windshield allows ${td.windshield.toLowerCase()}. Violations can result in fines of ${td.fine}.${allowsExemption ? " With a valid medical exemption, you may be permitted darker tints on qualifying windows." : " No medical exemptions are available in this state."}`
+      : `${base.name}'s window tint laws are designed to ensure safety while allowing some personal preference. Check your state's specific VLT requirements for each window.`,
+    howToSteps: allowsExemption ? [
+      { title: "Consult Your Physician", description: `Discuss your condition and how light sensitivity affects your daily life, especially when driving. Your physician will provide the necessary documentation for your ${base.name} medical exemption.` },
+      { title: "Complete the Medical Exemption Form", description: "Fill out the required medical exemption paperwork with your physician's help. Ensure all sections are completed accurately with your diagnosis and recommended tint levels." },
+      { title: "Submit Your Application", description: `Follow ${base.name}'s specific process for submitting the medical exemption.${td ? ` Filing requirement: ${td.dmv}.` : ""}` },
+      { title: "After Your Approval", description: `Keep your exemption documentation in your vehicle at all times. This serves as your legal protection during traffic stops in ${base.name}.${td ? ` Your exemption is valid for: ${td.duration}.` : ""}` },
+    ] : [
+      { title: "Understand the Limitation", description: `${base.name} does not currently allow medical exemptions for window tint. No doctor's note or medical documentation will permit darker tints beyond standard legal limits.` },
+      { title: "Explore Alternatives", description: "Consider UV-blocking clear window film (which doesn't reduce VLT), high-quality polarized sunglasses, or clip-on sun visors for your vehicle." },
+      { title: "Check Neighboring States", description: "If you frequently drive in neighboring states that do allow medical exemptions, you may be able to obtain an exemption there, though it may not be honored in your home state." },
     ],
-    understandingSection: `In ${base.name}, window tint exemptions are important for residents suffering from medical conditions that amplify light sensitivity. The state's climate can exacerbate symptoms for individuals with conditions like lupus or albinism. Obtaining a medical exemption is essential for ensuring safer, more comfortable driving conditions.`,
-    whatIsExemption: `A medical window tint exemption in ${base.name} allows individuals with specific medical conditions to have darker window tints than what is typically permitted by state law. To obtain an exemption, individuals must have documentation from a licensed physician affirming their need for enhanced protection from sunlight.`,
-    tintLawsDescription: `${base.name}'s window tint laws are designed to ensure safety while allowing some personal preference. Check your state's specific VLT requirements for each window. Violations can result in fines. Having a medical exemption protects you from citations related to darker tints.`,
-    howToSteps: [
-      { title: "Consult Your Physician", description: "Discuss your condition and how light sensitivity affects your daily life, especially when driving. Your physician will provide the necessary documentation." },
-      { title: "Complete the Medical Exemption Form", description: "Fill out the required medical exemption paperwork with your physician's help. Ensure all sections are completed accurately." },
-      { title: "Submit Your Application", description: "Follow your state's specific process for submitting the medical exemption. Some states require DMV filing while others do not." },
-      { title: "After Your Approval", description: "Keep your exemption documentation in your vehicle at all times. This serves as your legal protection during traffic stops." },
-    ],
-    pulledOverAdvice: `If pulled over for window tint in ${base.name}, remain calm and respectful. Inform the officer you have a medical exemption and present your documentation promptly. Know your rights and keep your exemption paperwork accessible at all times.`,
-    commonMistakes: [
+    pulledOverAdvice: allowsExemption
+      ? `If pulled over for window tint in ${base.name}, remain calm and respectful. Inform the officer you have a medical exemption and present your documentation promptly. Know your rights and keep your exemption paperwork accessible at all times.`
+      : `${base.name} does not offer medical tint exemptions. If pulled over for illegal tint, you may face a fine of ${td ? td.fine : "varying amounts"}. You cannot use a medical condition as a defense for illegal window tint in this state.`,
+    commonMistakes: allowsExemption ? [
       { title: "Not Consulting with a Qualified Physician", description: "Ensure your physician can provide proper documentation for your medical exemption." },
       { title: "Incomplete Documentation", description: "Make sure all required paperwork is properly completed and signed." },
       { title: "Not Keeping Documentation in Vehicle", description: "Always carry your exemption documentation in your vehicle." },
-      { title: "Ignoring Legal Limits", description: "Even with an exemption, understand the specific limits that apply." },
-      { title: "Forgetting About Renewals", description: "Check if your exemption needs periodic renewal." },
+      { title: "Ignoring Legal Limits", description: "Even with an exemption, understand the specific limits that apply in your state." },
+      { title: "Forgetting About Renewals", description: `Check if your exemption needs periodic renewal.${td ? ` Duration: ${td.duration}.` : ""}` },
+    ] : [
+      { title: "Assuming a Doctor's Note Is Sufficient", description: `${base.name} does not honor medical exemptions for window tint, regardless of documentation.` },
+      { title: "Applying Tint Based on Other States' Laws", description: "Each state has its own laws. An exemption from another state is not valid in a state that doesn't offer them." },
+      { title: "Not Knowing Your State's Limits", description: `Front side windows must allow ${td ? td.front : "the required amount"} in ${base.name}. Violations carry fines of ${td ? td.fine : "varying amounts"}.` },
     ],
-    faq: [
-      { question: "How do I know if I qualify for a medical window tint exemption?", answer: `To qualify in ${base.name}, you need a medical condition that causes light sensitivity, documented by a licensed physician.` },
-      { question: "Is there a fee for the medical exemption process?", answer: "Our consultation fee is $249, which includes the physician evaluation and certificate. Additional state fees may apply." },
-      { question: "Can I tint my windows darker than the standard limits with an exemption?", answer: "Yes, with a valid medical exemption, you can have darker tints than standard state limits." },
-      { question: "Do I need to carry the exemption at all times?", answer: "Yes, always keep your medical exemption documentation in your vehicle." },
-      { question: "What should I do if I receive a tint ticket?", answer: "Present your medical exemption documentation and contest the citation." },
-      { question: "How long is the medical exemption valid?", answer: "Duration varies by state and physician recommendation. Check your specific requirements." },
-      { question: "Can I transfer my exemption to a different vehicle?", answer: "In most cases, the exemption is tied to your medical condition, not a specific vehicle." },
-      { question: "What if my physician refuses to sign the exemption?", answer: "Seek a second opinion from another qualified physician who understands medical exemptions." },
+    faq: allowsExemption ? [
+      { question: `How do I know if I qualify for a medical window tint exemption in ${base.name}?`, answer: `To qualify in ${base.name}, you need a medical condition that causes light sensitivity — such as lupus, photophobia, migraines, or skin cancer — documented by a licensed physician. Our service connects you with a physician who can evaluate your condition.` },
+      { question: "Is there a fee for the medical exemption process?", answer: "Our consultation fee is $249, which includes the physician evaluation and signed exemption certificate. This is a one-time fee." },
+      { question: `What are the tint limits in ${base.name}?`, answer: `Without an exemption, front side windows must allow ${td ? td.front : "the state-required amount"}, back side windows require ${td ? td.back : "the state-required amount"}, and the rear window requires ${td ? td.rear : "the state-required amount"}.` },
+      { question: "Do I need to carry the exemption at all times?", answer: `Yes. ${td ? `In ${base.name}: ${td.dmv}.` : "Always keep your medical exemption documentation in your vehicle."}` },
+      { question: `What is the fine for illegal tint in ${base.name}?`, answer: `Fines for illegal window tint in ${base.name} are typically ${td ? td.fine : "varying amounts"}. A valid medical exemption protects you from these fines.` },
+      { question: `How long is the medical exemption valid in ${base.name}?`, answer: `${td ? td.duration : "Duration varies. Check with your physician."}. You may need to renew it periodically.` },
+      { question: "Can I transfer my exemption to a different vehicle?", answer: "In most cases, the exemption is tied to your medical condition, not a specific vehicle. Carry your documentation in whichever vehicle you drive." },
+      { question: "What if my physician refuses to sign the exemption?", answer: "Our licensed physicians specialize in evaluating patients for medical tint exemptions. If you have a qualifying condition, we can help." },
+    ] : [
+      { question: `Does ${base.name} allow medical window tint exemptions?`, answer: `No. ${base.name} does not currently have a provision for medical window tint exemptions. The state's tint laws apply to all drivers regardless of medical conditions.` },
+      { question: `What are the tint limits in ${base.name}?`, answer: `Front side windows must allow ${td ? td.front : "the required amount"}, back side windows require ${td ? td.back : "the required amount"}, and the rear window requires ${td ? td.rear : "the required amount"}.` },
+      { question: `What is the fine for illegal tint in ${base.name}?`, answer: `Fines for illegal window tint in ${base.name} are ${td ? td.fine : "varying amounts"}.` },
+      { question: "What alternatives do I have for light sensitivity?", answer: "Consider UV-blocking clear window film, high-quality polarized sunglasses, clip-on visors, or wearing a wide-brimmed hat while driving." },
+      { question: "Can I use an exemption from another state?", answer: `No. An exemption from another state is generally not valid in ${base.name} since the state does not recognize medical tint exemptions.` },
     ],
   };
 }

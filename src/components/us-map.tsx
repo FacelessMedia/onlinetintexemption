@@ -59,6 +59,9 @@ export function USMap() {
               const state = abbr ? stateByAbbr[abbr] : null;
               const isHovered = hovered === abbr;
 
+              const allowsExemption = state ? state.allowsMedicalExemption : true;
+              const baseColor = allowsExemption ? "var(--primary)" : "#ef4444";
+
               return (
                 <Geography
                   key={geo.rsmKey}
@@ -74,26 +77,26 @@ export function USMap() {
                   }}
                   style={{
                     default: {
-                      fill: "color-mix(in srgb, var(--primary) 25%, var(--background))",
-                      stroke: "color-mix(in srgb, var(--primary) 40%, var(--border))",
+                      fill: `color-mix(in srgb, ${baseColor} 25%, var(--background))`,
+                      stroke: `color-mix(in srgb, ${baseColor} 40%, var(--border))`,
                       strokeWidth: 0.75,
                       outline: "none",
                       cursor: state ? "pointer" : "default",
                       transition: "all 0.2s ease",
                     },
                     hover: {
-                      fill: "color-mix(in srgb, var(--primary) 55%, var(--background))",
-                      stroke: "var(--primary)",
+                      fill: `color-mix(in srgb, ${baseColor} 55%, var(--background))`,
+                      stroke: baseColor,
                       strokeWidth: 1.5,
                       outline: "none",
                       cursor: "pointer",
-                      filter: "drop-shadow(0 4px 12px color-mix(in srgb, var(--primary) 50%, transparent))",
+                      filter: `drop-shadow(0 4px 12px color-mix(in srgb, ${baseColor} 50%, transparent))`,
                       transform: "translateY(-2px)",
                       transition: "all 0.2s ease",
                     },
                     pressed: {
-                      fill: "color-mix(in srgb, var(--primary) 70%, var(--background))",
-                      stroke: "var(--primary)",
+                      fill: `color-mix(in srgb, ${baseColor} 70%, var(--background))`,
+                      stroke: baseColor,
                       strokeWidth: 2,
                       outline: "none",
                     },
@@ -111,17 +114,26 @@ export function USMap() {
           className="fixed z-50 pointer-events-none"
           style={{ left: tooltipPos.x + 20, top: tooltipPos.y - 20 }}
         >
-          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 w-64 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 w-72 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-base">
+              <span className={`flex h-10 w-10 items-center justify-center rounded-lg font-bold text-base text-white ${
+                hoveredState.allowsMedicalExemption ? "bg-primary" : "bg-red-500"
+              }`}>
                 {hovered}
               </span>
               <div>
                 <div className="font-bold text-base text-card-foreground leading-tight">
                   {hoveredState.name}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Medical Tint Exemption
+                <div className={`text-xs font-semibold flex items-center gap-1.5 mt-0.5 ${
+                  hoveredState.allowsMedicalExemption ? "text-emerald-400" : "text-red-400"
+                }`}>
+                  <span className={`inline-block h-2 w-2 rounded-full ${
+                    hoveredState.allowsMedicalExemption ? "bg-emerald-400" : "bg-red-400"
+                  }`} />
+                  {hoveredState.allowsMedicalExemption
+                    ? "Medical Exemption Available"
+                    : "No Medical Exemption"}
                 </div>
               </div>
             </div>
@@ -138,15 +150,21 @@ export function USMap() {
                   {hoveredState.ticketFine}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Duration</span>
-                <span className="text-card-foreground font-semibold">
-                  {hoveredState.exemptionDuration}
-                </span>
-              </div>
+              {hoveredState.allowsMedicalExemption && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Duration</span>
+                  <span className="text-card-foreground font-semibold">
+                    {hoveredState.exemptionDuration}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="mt-3 pt-2 border-t border-border text-xs text-primary font-semibold flex items-center gap-1">
-              Click to view full details →
+            <div className={`mt-3 pt-2 border-t border-border text-xs font-semibold flex items-center gap-1 ${
+              hoveredState.allowsMedicalExemption ? "text-primary" : "text-red-400"
+            }`}>
+              {hoveredState.allowsMedicalExemption
+                ? "Click to view full details →"
+                : "Click for tint law details →"}
             </div>
           </div>
         </div>
