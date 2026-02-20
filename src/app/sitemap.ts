@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllStateSlugs } from "@/data/states";
+import { getAllStateSlugs, getAllStates } from "@/data/states";
 import { getAllConditionSlugs } from "@/data/conditions";
 
 const BASE = "https://www.onlinetintexemption.com";
@@ -28,12 +28,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.9,
   }));
 
-  const bookingPages: MetadataRoute.Sitemap = getAllStateSlugs().map((slug) => ({
-    url: `${BASE}/book/${slug}`,
-    lastModified: now,
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
+  const bookingPages: MetadataRoute.Sitemap = getAllStates()
+    .filter((s) => s.offered)
+    .map((s) => ({
+      url: `${BASE}/book/${s.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }));
 
   const conditionPages: MetadataRoute.Sitemap = getAllConditionSlugs().map((slug) => ({
     url: `${BASE}/conditions/${slug}`,

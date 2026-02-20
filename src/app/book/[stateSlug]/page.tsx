@@ -11,14 +11,16 @@ import {
   Mail,
   Shield,
 } from "lucide-react";
-import { getStateBySlug, getAllStateSlugs } from "@/data/states";
+import { getStateBySlug, getAllStates } from "@/data/states";
 
 interface PageProps {
   params: Promise<{ stateSlug: string }>;
 }
 
 export async function generateStaticParams() {
-  return getAllStateSlugs().map((slug) => ({ stateSlug: slug }));
+  return getAllStates()
+    .filter((s) => s.offered)
+    .map((s) => ({ stateSlug: s.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BookStatePage({ params }: PageProps) {
   const resolved = await params;
   const state = getStateBySlug(resolved.stateSlug);
-  if (!state) notFound();
+  if (!state || !state.offered) notFound();
 
   return (
     <>
