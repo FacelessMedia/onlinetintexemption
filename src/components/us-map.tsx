@@ -42,8 +42,32 @@ export function USMap() {
 
   const hoveredState = hovered ? stateByAbbr[hovered] : null;
 
+  // Determine map color category for a state
+  function getStateColor(s: typeof allStates[0] | null): string {
+    if (!s) return "var(--primary)";
+    if (!s.allowsMedicalExemption) return "#ef4444"; // red
+    if (!s.offered) return "#eab308"; // yellow
+    return "#22c55e"; // green
+  }
+
   return (
     <div className="relative" onMouseMove={handleMouseMove}>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-4 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm bg-green-500" />
+          <span className="text-muted-foreground">Available Through OnlineTintExemption</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm bg-yellow-500" />
+          <span className="text-muted-foreground">Exemption Allowed — Not Offered by Us</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm bg-red-500" />
+          <span className="text-muted-foreground">No Medical Exemption</span>
+        </div>
+      </div>
+
       <ComposableMap
         projection="geoAlbersUsa"
         projectionConfig={{ scale: 1000 }}
@@ -59,8 +83,7 @@ export function USMap() {
               const state = abbr ? stateByAbbr[abbr] : null;
               const isHovered = hovered === abbr;
 
-              const allowsExemption = state ? state.allowsMedicalExemption : true;
-              const baseColor = allowsExemption ? "var(--primary)" : "#ef4444";
+              const baseColor = getStateColor(state);
 
               return (
                 <Geography
@@ -117,7 +140,9 @@ export function USMap() {
           <div className="bg-card border border-border rounded-xl shadow-2xl p-4 w-72 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-3">
               <span className={`flex h-10 w-10 items-center justify-center rounded-lg font-bold text-base text-white ${
-                hoveredState.allowsMedicalExemption ? "bg-primary" : "bg-red-500"
+                !hoveredState.allowsMedicalExemption ? "bg-red-500"
+                  : hoveredState.offered ? "bg-green-500"
+                  : "bg-yellow-500"
               }`}>
                 {hovered}
               </span>
@@ -126,14 +151,20 @@ export function USMap() {
                   {hoveredState.name}
                 </div>
                 <div className={`text-xs font-semibold flex items-center gap-1.5 mt-0.5 ${
-                  hoveredState.allowsMedicalExemption ? "text-emerald-400" : "text-red-400"
+                  !hoveredState.allowsMedicalExemption ? "text-red-400"
+                    : hoveredState.offered ? "text-emerald-400"
+                    : "text-yellow-400"
                 }`}>
                   <span className={`inline-block h-2 w-2 rounded-full ${
-                    hoveredState.allowsMedicalExemption ? "bg-emerald-400" : "bg-red-400"
+                    !hoveredState.allowsMedicalExemption ? "bg-red-400"
+                      : hoveredState.offered ? "bg-emerald-400"
+                      : "bg-yellow-400"
                   }`} />
-                  {hoveredState.allowsMedicalExemption
+                  {!hoveredState.allowsMedicalExemption
+                    ? "No Medical Exemption"
+                    : hoveredState.offered
                     ? "Medical Exemption Available"
-                    : "No Medical Exemption"}
+                    : "Exemption Allowed — Not Our Service"}
                 </div>
               </div>
             </div>
@@ -150,7 +181,7 @@ export function USMap() {
                   {hoveredState.ticketFine}
                 </span>
               </div>
-              {hoveredState.allowsMedicalExemption && (
+              {hoveredState.allowsMedicalExemption && hoveredState.offered && (
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Duration</span>
                   <span className="text-card-foreground font-semibold">
@@ -159,12 +190,15 @@ export function USMap() {
                 </div>
               )}
             </div>
-            <div className={`mt-3 pt-2 border-t border-border text-xs font-semibold flex items-center gap-1 ${
-              hoveredState.allowsMedicalExemption ? "text-primary" : "text-red-400"
+            {/* OnlineTintExemption service status */}
+            <div className={`mt-3 pt-2 border-t border-border text-xs font-semibold ${
+              hoveredState.offered ? "text-emerald-400" : "text-muted-foreground"
             }`}>
-              {hoveredState.allowsMedicalExemption
-                ? "Click to view full details →"
-                : "Click for tint law details →"}
+              {hoveredState.offered
+                ? `OnlineTintExemption — $${hoveredState.price} • Click for details →`
+                : !hoveredState.allowsMedicalExemption
+                ? "OnlineTintExemption — Not available in this state"
+                : "OnlineTintExemption — Contact your DMV for exemption info"}
             </div>
           </div>
         </div>

@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = `https://www.onlinetintexemption.com/${state.slug}-window-tint-medical-exemption`;
   return {
     title: `${state.name} Window Tint Medical Exemption Guide 2026`,
-    description: `Get your ${state.name} medical window tint exemption online. ${state.heroDescription} Fast approval, $249 flat rate.`,
+    description: state.offered
+      ? `Get your ${state.name} medical window tint exemption online. ${state.heroDescription} Fast approval, $${state.price} flat rate.`
+      : `${state.name} window tint laws and medical exemption info. ${state.heroDescription}`,
     keywords: [
       `${state.name} window tint exemption`,
       `${state.name} medical tint exemption`,
@@ -96,13 +98,15 @@ export default async function StatePage({ params }: PageProps) {
         url: "https://www.onlinetintexemption.com",
         telephone: "+1-734-338-8453",
       },
-      offers: {
-        "@type": "Offer",
-        price: "249",
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        url: `https://www.onlinetintexemption.com/book/${state.slug}`,
-      },
+      ...(state.offered ? {
+        offers: {
+          "@type": "Offer",
+          price: String(state.price),
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: `https://www.onlinetintexemption.com/book/${state.slug}`,
+        },
+      } : {}),
     },
   };
 
@@ -145,15 +149,25 @@ export default async function StatePage({ params }: PageProps) {
             <p className="mt-4 text-lg text-muted-foreground">
               {state.heroDescription}
             </p>
-            <div className="mt-6">
-              <Link
-                href={`/book/${state.slug}`}
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get Your {state.abbreviation} Exemption
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Link>
-            </div>
+            {state.offered ? (
+              <div className="mt-6">
+                <Link
+                  href={`/book/${state.slug}`}
+                  className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Get Your {state.abbreviation} Exemption — ${state.price}
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+                <p className="text-sm text-foreground font-semibold">
+                  {state.allowsMedicalExemption
+                    ? `OnlineTintExemption does not currently offer services in ${state.name}. Contact your local DMV or physician for medical exemption options.`
+                    : `${state.name} does not allow medical window tint exemptions.`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -344,53 +358,94 @@ export default async function StatePage({ params }: PageProps) {
             )}
 
             {/* Bottom CTA */}
-            <section className="rounded-xl border border-border bg-card p-8">
-              <h2 className="text-2xl font-bold text-card-foreground mb-2">
-                Get Your {state.name} Window Tint Exemption Today
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Obtaining a window tint medical exemption in {state.name} is essential for individuals suffering from light sensitivity. Don&apos;t wait—apply for your exemption today to ensure a more pleasant driving experience.
-              </p>
-              <Link
-                href={`/book/${state.slug}`}
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get Started Now
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Link>
-            </section>
+            {state.offered ? (
+              <section className="rounded-xl border border-border bg-card p-8">
+                <h2 className="text-2xl font-bold text-card-foreground mb-2">
+                  Get Your {state.name} Window Tint Exemption Today
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Obtaining a window tint medical exemption in {state.name} is essential for individuals suffering from light sensitivity. Don&apos;t wait—apply for your exemption today to ensure a more pleasant driving experience.
+                </p>
+                <Link
+                  href={`/book/${state.slug}`}
+                  className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Get Started — ${state.price}
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Link>
+              </section>
+            ) : (
+              <section className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-8">
+                <h2 className="text-2xl font-bold text-card-foreground mb-2">
+                  {state.allowsMedicalExemption
+                    ? `${state.name} Medical Tint Exemption — Not Available Through Us`
+                    : `${state.name} Does Not Allow Medical Tint Exemptions`}
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  {state.allowsMedicalExemption
+                    ? `While ${state.name} does allow medical window tint exemptions, OnlineTintExemption does not currently offer services in this state. We recommend contacting your local DMV or a licensed physician in ${state.name} for assistance.`
+                    : `${state.name} does not have a medical exemption program for window tint. Even with a doctor's note, darker tints beyond the legal limit are not permitted.`}
+                </p>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-6 py-3 text-base font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  Contact Us With Questions
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Link>
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
-              <div className="rounded-xl border border-primary/30 bg-card p-6">
-                <h3 className="text-lg font-bold text-card-foreground mb-4">
-                  Get Your {state.name} Exemption
-                </h3>
-                <ul className="space-y-3 mb-6">
-                  {[
-                    "Licensed physician consultation",
-                    "24-hour certificate delivery",
-                    "100% money-back guarantee",
-                    `Valid in ${state.name}`,
-                    "Secure online process",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/book/${state.slug}`}
-                  className="block w-full text-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  Get Started Now
-                </Link>
-                <p className="mt-2 text-center text-xs text-muted-foreground">Takes less than 5 minutes</p>
-                <p className="mt-1 text-center text-xs text-muted-foreground">Secure • Confidential • Licensed</p>
-              </div>
+              {state.offered ? (
+                <div className="rounded-xl border border-primary/30 bg-card p-6">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">
+                    Get Your {state.name} Exemption
+                  </h3>
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      "Licensed physician consultation",
+                      "24-hour certificate delivery",
+                      "100% money-back guarantee",
+                      `Valid in ${state.name}`,
+                      "Secure online process",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href={`/book/${state.slug}`}
+                    className="block w-full text-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Get Started — ${state.price}
+                  </Link>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">Takes less than 5 minutes</p>
+                  <p className="mt-1 text-center text-xs text-muted-foreground">Secure • Confidential • Licensed</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-yellow-500/30 bg-card p-6">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">
+                    {state.allowsMedicalExemption ? "Exemption Info" : "Tint Law Info"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {state.allowsMedicalExemption
+                      ? `OnlineTintExemption does not currently service ${state.name}. Contact your local DMV or physician for medical tint exemption options.`
+                      : `${state.name} does not allow medical tint exemptions. Review the tint laws on this page for legal limits.`}
+                  </p>
+                  <Link
+                    href="/contact"
+                    className="block w-full text-center rounded-lg border border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border bg-card p-6">
                 <h3 className="font-semibold text-card-foreground mb-2">Need Help?</h3>

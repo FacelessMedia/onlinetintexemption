@@ -51,8 +51,8 @@ export const states: Record<string, StateData> = {
     slug: "ohio",
     offered: true,
     allowsMedicalExemption: true,
-    price: 249,
-    originalPrice: 349,
+    price: 350,
+    originalPrice: 450,
     heroTitle: "Secure Your Medical Tint Exemption in Ohio Today",
     heroDescription: "If you suffer from light sensitivity, navigating Ohio's roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -111,8 +111,8 @@ export const states: Record<string, StateData> = {
     slug: "texas",
     offered: true,
     allowsMedicalExemption: true,
-    price: 249,
-    originalPrice: 349,
+    price: 300,
+    originalPrice: 400,
     heroTitle: "Unlock Your Comfort with Texas Window Tint Exemptions",
     heroDescription: "If you suffer from light sensitivity, navigating Texas roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -171,8 +171,8 @@ export const states: Record<string, StateData> = {
     slug: "california",
     offered: true,
     allowsMedicalExemption: true,
-    price: 249,
-    originalPrice: 349,
+    price: 300,
+    originalPrice: 400,
     heroTitle: "Secure Your Medical Window Tint Exemption in California",
     heroDescription: "If you suffer from light sensitivity, driving in California's sunny climate can be particularly challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -230,8 +230,8 @@ export const states: Record<string, StateData> = {
     slug: "florida",
     offered: true,
     allowsMedicalExemption: true,
-    price: 249,
-    originalPrice: 349,
+    price: 400,
+    originalPrice: 500,
     heroTitle: "Get Your Medical Window Tint Exemption in Florida",
     heroDescription: "If you suffer from light sensitivity, Florida's intense sunshine can make driving especially difficult. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -317,7 +317,7 @@ const tintData: Record<string, { front: string; back: string; rear: string; wind
   NE: { front: "35% VLT", back: "20% VLT", rear: "20% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   NV: { front: "35% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   NH: { front: "70% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective tint not permitted below AS-1 line", fine: "$124", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
-  NJ: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "Up to $1,000", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
+  NJ: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "Up to $1,000", exemption: true, duration: "Per physician recommendation", dmv: "Register with MVC" },
   NM: { front: "20% VLT", back: "20% VLT", rear: "20% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   NY: { front: "70% VLT", back: "70% VLT", rear: "Any darkness", windshield: "Non-reflective above top 6 inches", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Carry Form MV-80W" },
   NC: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
@@ -332,13 +332,65 @@ const tintData: Record<string, { front: string; back: string; rear: string; wind
   TN: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$100", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   TX: { front: "25% VLT", back: "25% VLT", rear: "Any darkness", windshield: "25% VLT above AS-1 line", fine: "$250", exemption: true, duration: "Per physician recommendation", dmv: "Not required" },
   UT: { front: "43% VLT", back: "Any darkness", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$120", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
-  VT: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "$162", exemption: false, duration: "N/A", dmv: "N/A — no medical exemption" },
+  VT: { front: "No tint allowed", back: "Any darkness", rear: "Any darkness", windshield: "No tint allowed", fine: "$162", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   VA: { front: "50% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$110", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   WA: { front: "24% VLT", back: "24% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line (6 inches)", fine: "$136", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   WV: { front: "35% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   WI: { front: "50% VLT", back: "35% VLT", rear: "35% VLT", windshield: "Non-reflective above AS-1 line", fine: "$175", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   WY: { front: "28% VLT", back: "28% VLT", rear: "28% VLT", windshield: "Non-reflective above AS-1 line", fine: "$200", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
   DC: { front: "70% VLT", back: "50% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
+};
+
+// Pricing tiers by state abbreviation
+// Tier 1: High complexity, require state filing — higher price
+// Tier 2: Easy telemedicine, doctor certificate only — $300
+// Tier 3: Avoid / careful marketing — not offered through our service
+// Unlisted states default to Tier 3 (yellow) unless exemption=false (red)
+const stateTiers: Record<string, { tier: 1 | 2 | 3; price: number; originalPrice: number }> = {
+  // Tier 1 Revenue States
+  NY: { tier: 1, price: 450, originalPrice: 550 },
+  AL: { tier: 1, price: 350, originalPrice: 450 },
+  NJ: { tier: 1, price: 400, originalPrice: 500 },
+  AZ: { tier: 1, price: 350, originalPrice: 450 },
+  MD: { tier: 1, price: 350, originalPrice: 450 },
+  SC: { tier: 1, price: 350, originalPrice: 450 },
+  OH: { tier: 1, price: 350, originalPrice: 450 },
+  PA: { tier: 1, price: 400, originalPrice: 500 },
+  OK: { tier: 1, price: 400, originalPrice: 500 },
+  MT: { tier: 1, price: 350, originalPrice: 450 },
+  MS: { tier: 1, price: 400, originalPrice: 500 },
+  LA: { tier: 1, price: 350, originalPrice: 450 },
+  CT: { tier: 1, price: 350, originalPrice: 450 },
+  TN: { tier: 1, price: 350, originalPrice: 450 },
+  GA: { tier: 1, price: 400, originalPrice: 500 },
+  IN: { tier: 1, price: 350, originalPrice: 450 },
+  NV: { tier: 1, price: 350, originalPrice: 450 },
+  VT: { tier: 1, price: 400, originalPrice: 500 },
+  VA: { tier: 1, price: 350, originalPrice: 450 },
+  WY: { tier: 1, price: 350, originalPrice: 450 },
+  FL: { tier: 1, price: 400, originalPrice: 500 },
+  NC: { tier: 1, price: 350, originalPrice: 450 },
+  DE: { tier: 1, price: 350, originalPrice: 450 },
+  // Tier 2 Easy Telemedicine States
+  MI: { tier: 2, price: 300, originalPrice: 400 },
+  TX: { tier: 2, price: 300, originalPrice: 400 },
+  WA: { tier: 2, price: 300, originalPrice: 400 },
+  OR: { tier: 2, price: 300, originalPrice: 400 },
+  MN: { tier: 2, price: 300, originalPrice: 400 },
+  AR: { tier: 2, price: 300, originalPrice: 400 },
+  CA: { tier: 2, price: 300, originalPrice: 400 },
+  NM: { tier: 2, price: 300, originalPrice: 400 },
+  WI: { tier: 2, price: 300, originalPrice: 400 },
+  IL: { tier: 2, price: 300, originalPrice: 400 },
+  WV: { tier: 2, price: 300, originalPrice: 400 },
+  // Tier 3 Avoid / Careful Marketing
+  CO: { tier: 3, price: 0, originalPrice: 0 },
+  HI: { tier: 3, price: 0, originalPrice: 0 },
+  AK: { tier: 3, price: 0, originalPrice: 0 },
+  KS: { tier: 3, price: 0, originalPrice: 0 },
+  KY: { tier: 3, price: 0, originalPrice: 0 },
+  ND: { tier: 3, price: 0, originalPrice: 0 },
+  SD: { tier: 3, price: 0, originalPrice: 0 },
 };
 
 // Generate stub entries for remaining states
@@ -396,12 +448,18 @@ const allStatesBase: { name: string; abbreviation: string; slug: string; offered
 function generateDefaultState(base: typeof allStatesBase[0]): StateData {
   const td = tintData[base.abbreviation];
   const allowsExemption = td ? td.exemption : true;
+  const tier = stateTiers[base.abbreviation];
+  // offered = true only for Tier 1 and Tier 2 states
+  const isOffered = tier ? tier.tier <= 2 : false;
+  const price = tier ? tier.price : 0;
+  const originalPrice = tier ? tier.originalPrice : 0;
 
   return {
     ...base,
+    offered: isOffered,
     allowsMedicalExemption: allowsExemption,
-    price: 249,
-    originalPrice: 349,
+    price,
+    originalPrice,
     heroTitle: allowsExemption
       ? `Get Your Medical Window Tint Exemption in ${base.name}`
       : `${base.name} Window Tint Laws — No Medical Exemption Available`,
@@ -459,7 +517,7 @@ function generateDefaultState(base: typeof allStatesBase[0]): StateData {
     ],
     faq: allowsExemption ? [
       { question: `How do I know if I qualify for a medical window tint exemption in ${base.name}?`, answer: `To qualify in ${base.name}, you need a medical condition that causes light sensitivity — such as lupus, photophobia, migraines, or skin cancer — documented by a licensed physician. Our service connects you with a physician who can evaluate your condition.` },
-      { question: "Is there a fee for the medical exemption process?", answer: "Our consultation fee is $249, which includes the physician evaluation and signed exemption certificate. This is a one-time fee." },
+      { question: "Is there a fee for the medical exemption process?", answer: `Our consultation fee is $${price}, which includes the physician evaluation and signed exemption certificate. This is a one-time fee.` },
       { question: `What are the tint limits in ${base.name}?`, answer: `Without an exemption, front side windows must allow ${td ? td.front : "the state-required amount"}, back side windows require ${td ? td.back : "the state-required amount"}, and the rear window requires ${td ? td.rear : "the state-required amount"}.` },
       { question: "Do I need to carry the exemption at all times?", answer: `Yes. ${td ? `In ${base.name}: ${td.dmv}.` : "Always keep your medical exemption documentation in your vehicle."}` },
       { question: `What is the fine for illegal tint in ${base.name}?`, answer: `Fines for illegal window tint in ${base.name} are typically ${td ? td.fine : "varying amounts"}. A valid medical exemption protects you from these fines.` },
