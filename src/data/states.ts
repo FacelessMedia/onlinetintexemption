@@ -51,8 +51,8 @@ export const states: Record<string, StateData> = {
     slug: "ohio",
     offered: true,
     allowsMedicalExemption: true,
-    price: 350,
-    originalPrice: 450,
+    price: 250,
+    originalPrice: 350,
     heroTitle: "Secure Your Medical Tint Exemption in Ohio Today",
     heroDescription: "If you suffer from light sensitivity, navigating Ohio's roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -111,8 +111,8 @@ export const states: Record<string, StateData> = {
     slug: "texas",
     offered: true,
     allowsMedicalExemption: true,
-    price: 300,
-    originalPrice: 400,
+    price: 225,
+    originalPrice: 325,
     heroTitle: "Unlock Your Comfort with Texas Window Tint Exemptions",
     heroDescription: "If you suffer from light sensitivity, navigating Texas roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -150,7 +150,7 @@ export const states: Record<string, StateData> = {
     ],
     faq: [
       { question: "How long does it take to get a medical exemption statement?", answer: "Most patients receive their statement within 24-48 hours of their consultation." },
-      { question: "Is there a fee for getting a medical tint exemption?", answer: "There may be costs associated with the physician consultation. Our service is $249 for the complete process." },
+      { question: "Is there a fee for getting a medical tint exemption?", answer: "There may be costs associated with the physician consultation. Our service is $225 for the complete process." },
       { question: "Can I tint my windows darker than allowed if I have an exemption?", answer: "Yes, with a valid medical exemption, you can have darker tints than standard Texas limits." },
       { question: "Do I need to renew my medical exemption statement?", answer: "This depends on your physician's recommendation. Some statements may need periodic renewal." },
       { question: "What should I do if I get a ticket despite having a medical exemption?", answer: "Present your medical exemption statement and appeal the ticket through the court system." },
@@ -171,8 +171,8 @@ export const states: Record<string, StateData> = {
     slug: "california",
     offered: true,
     allowsMedicalExemption: true,
-    price: 300,
-    originalPrice: 400,
+    price: 250,
+    originalPrice: 350,
     heroTitle: "Secure Your Medical Window Tint Exemption in California",
     heroDescription: "If you suffer from light sensitivity, driving in California's sunny climate can be particularly challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -214,7 +214,7 @@ export const states: Record<string, StateData> = {
       { question: "What are the risks of driving without a medical exemption?", answer: "You may receive fix-it tickets and fines up to $250 for non-compliant tint without an exemption." },
       { question: "Can I appeal a ticket if I'm pulled over for my tint?", answer: "Yes, present your medical exemption certificate to appeal the citation." },
       { question: "How long does the exemption process take?", answer: "Most patients receive their certificate within 24-48 hours of consultation." },
-      { question: "Is there a fee for obtaining a medical exemption certificate?", answer: "Our consultation fee is $249, which includes the physician evaluation and certificate." },
+      { question: "Is there a fee for obtaining a medical exemption certificate?", answer: "Our consultation fee is $250, which includes the physician evaluation and certificate." },
       { question: "What should I do if my medical condition changes?", answer: "Consult your physician to update your documentation as needed." },
       { question: "Are there limits to the darkness of tint I can have?", answer: "Your physician will specify appropriate tint levels based on your medical needs and state regulations." },
     ],
@@ -230,8 +230,8 @@ export const states: Record<string, StateData> = {
     slug: "florida",
     offered: true,
     allowsMedicalExemption: true,
-    price: 400,
-    originalPrice: 500,
+    price: 250,
+    originalPrice: 350,
     heroTitle: "Get Your Medical Window Tint Exemption in Florida",
     heroDescription: "If you suffer from light sensitivity, Florida's intense sunshine can make driving especially difficult. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
     tintLaws: {
@@ -270,7 +270,7 @@ export const states: Record<string, StateData> = {
     ],
     faq: [
       { question: "How long does it take to get a medical window tint exemption in Florida?", answer: "Processing time varies, but most applications are processed within a few weeks by the DMV." },
-      { question: "Is there a fee for the medical exemption application?", answer: "There may be nominal DMV fees. Our physician consultation is $249." },
+      { question: "Is there a fee for the medical exemption application?", answer: "There may be nominal DMV fees. Our physician consultation is $250." },
       { question: "Can I tint my front windshield with the exemption?", answer: "This depends on your specific medical needs and what your physician documents." },
       { question: "What happens if I get a ticket for window tint before my exemption is approved?", answer: "Present proof of your pending application to the court when contesting the ticket." },
       { question: "Can I transfer my exemption to a different vehicle?", answer: "Contact the Florida DMV about transferring your exemption to a new vehicle." },
@@ -341,56 +341,45 @@ const tintData: Record<string, { front: string; back: string; rear: string; wind
   DC: { front: "70% VLT", back: "50% VLT", rear: "Any darkness", windshield: "Non-reflective above AS-1 line", fine: "$150", exemption: true, duration: "Per physician recommendation", dmv: "Keep in vehicle" },
 };
 
-// Pricing tiers by state abbreviation
-// Tier 1: High complexity, require state filing — higher price
-// Tier 2: Easy telemedicine, doctor certificate only — $300
-// Tier 3: Avoid / careful marketing — not offered through our service
-// Unlisted states default to Tier 3 (yellow) unless exemption=false (red)
-const stateTiers: Record<string, { tier: 1 | 2 | 3; price: number; originalPrice: number }> = {
-  // Tier 1 Revenue States
-  NY: { tier: 1, price: 450, originalPrice: 550 },
-  AL: { tier: 1, price: 350, originalPrice: 450 },
-  NJ: { tier: 1, price: 400, originalPrice: 500 },
-  AZ: { tier: 1, price: 350, originalPrice: 450 },
-  MD: { tier: 1, price: 350, originalPrice: 450 },
-  SC: { tier: 1, price: 350, originalPrice: 450 },
-  OH: { tier: 1, price: 350, originalPrice: 450 },
-  PA: { tier: 1, price: 400, originalPrice: 500 },
-  OK: { tier: 1, price: 400, originalPrice: 500 },
-  MT: { tier: 1, price: 350, originalPrice: 450 },
-  MS: { tier: 1, price: 400, originalPrice: 500 },
-  LA: { tier: 1, price: 350, originalPrice: 450 },
-  CT: { tier: 1, price: 350, originalPrice: 450 },
-  TN: { tier: 1, price: 350, originalPrice: 450 },
-  GA: { tier: 1, price: 400, originalPrice: 500 },
-  IN: { tier: 1, price: 350, originalPrice: 450 },
-  NV: { tier: 1, price: 350, originalPrice: 450 },
-  VT: { tier: 1, price: 400, originalPrice: 500 },
-  VA: { tier: 1, price: 350, originalPrice: 450 },
-  WY: { tier: 1, price: 350, originalPrice: 450 },
-  FL: { tier: 1, price: 400, originalPrice: 500 },
-  NC: { tier: 1, price: 350, originalPrice: 450 },
-  DE: { tier: 1, price: 350, originalPrice: 450 },
-  // Tier 2 Easy Telemedicine States
-  MI: { tier: 2, price: 300, originalPrice: 400 },
-  TX: { tier: 2, price: 300, originalPrice: 400 },
-  WA: { tier: 2, price: 300, originalPrice: 400 },
-  OR: { tier: 2, price: 300, originalPrice: 400 },
-  MN: { tier: 2, price: 300, originalPrice: 400 },
-  AR: { tier: 2, price: 300, originalPrice: 400 },
-  CA: { tier: 2, price: 300, originalPrice: 400 },
-  NM: { tier: 2, price: 300, originalPrice: 400 },
-  WI: { tier: 2, price: 300, originalPrice: 400 },
-  IL: { tier: 2, price: 300, originalPrice: 400 },
-  WV: { tier: 2, price: 300, originalPrice: 400 },
-  // Tier 3 Avoid / Careful Marketing
-  CO: { tier: 3, price: 0, originalPrice: 0 },
-  HI: { tier: 3, price: 0, originalPrice: 0 },
-  AK: { tier: 3, price: 0, originalPrice: 0 },
-  KS: { tier: 3, price: 0, originalPrice: 0 },
-  KY: { tier: 3, price: 0, originalPrice: 0 },
-  ND: { tier: 3, price: 0, originalPrice: 0 },
-  SD: { tier: 3, price: 0, originalPrice: 0 },
+// Offered states + pricing — mirrors myeyerx.net/shop EXACTLY (the source of
+// truth for which states we sell and the price). A state is offered IFF it has
+// an entry here. originalPrice is a marketing strike-through anchor (price+100).
+// States absent from this map are NOT offered (offered=false, price=0):
+//   AL, AK, CO, CT, DE, HI, IA, KY, LA, ME, MA, MS, NE, NH, ND, SD, UT, VT.
+const offeredPricing: Record<string, { price: number; originalPrice: number }> = {
+  AZ: { price: 275, originalPrice: 375 },
+  AR: { price: 225, originalPrice: 325 },
+  CA: { price: 250, originalPrice: 350 },
+  FL: { price: 250, originalPrice: 350 },
+  GA: { price: 250, originalPrice: 350 },
+  ID: { price: 225, originalPrice: 325 },
+  IL: { price: 225, originalPrice: 325 },
+  IN: { price: 250, originalPrice: 350 },
+  KS: { price: 250, originalPrice: 350 },
+  MD: { price: 250, originalPrice: 350 },
+  MI: { price: 225, originalPrice: 325 },
+  MN: { price: 225, originalPrice: 325 },
+  MO: { price: 250, originalPrice: 350 },
+  MT: { price: 250, originalPrice: 350 },
+  NV: { price: 250, originalPrice: 350 },
+  NJ: { price: 250, originalPrice: 350 },
+  NM: { price: 225, originalPrice: 325 },
+  NY: { price: 350, originalPrice: 450 },
+  NC: { price: 250, originalPrice: 350 },
+  OH: { price: 250, originalPrice: 350 },
+  OK: { price: 250, originalPrice: 350 },
+  OR: { price: 225, originalPrice: 325 },
+  PA: { price: 250, originalPrice: 350 },
+  RI: { price: 250, originalPrice: 350 },
+  SC: { price: 225, originalPrice: 325 },
+  TN: { price: 250, originalPrice: 350 },
+  TX: { price: 225, originalPrice: 325 },
+  VA: { price: 250, originalPrice: 350 },
+  WA: { price: 225, originalPrice: 325 },
+  WV: { price: 225, originalPrice: 325 },
+  WI: { price: 225, originalPrice: 325 },
+  WY: { price: 250, originalPrice: 350 },
+  DC: { price: 250, originalPrice: 350 },
 };
 
 // Generate stub entries for remaining states
@@ -448,11 +437,11 @@ const allStatesBase: { name: string; abbreviation: string; slug: string; offered
 function generateDefaultState(base: typeof allStatesBase[0]): StateData {
   const td = tintData[base.abbreviation];
   const allowsExemption = td ? td.exemption : true;
-  const tier = stateTiers[base.abbreviation];
-  // offered = true only for Tier 1 and Tier 2 states
-  const isOffered = tier ? tier.tier <= 2 : false;
-  const price = tier ? tier.price : 0;
-  const originalPrice = tier ? tier.originalPrice : 0;
+  // offered + pricing mirror myeyerx.net exactly (the source of truth).
+  const pricing = offeredPricing[base.abbreviation];
+  const isOffered = !!pricing;
+  const price = pricing ? pricing.price : 0;
+  const originalPrice = pricing ? pricing.originalPrice : 0;
 
   return {
     ...base,

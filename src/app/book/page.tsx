@@ -13,7 +13,7 @@ import { getOfferedStates } from "@/data/states";
 export const metadata: Metadata = {
   title: "Book Your Consultation | Get Your Tint Exemption",
   description:
-    "Select your state to book a medical window tint exemption consultation. Licensed physicians, all 50 states, $249.",
+    "Select your state to book a medical window tint exemption consultation. Licensed physicians, 32 states + DC, from $225.",
 };
 
 const steps = [

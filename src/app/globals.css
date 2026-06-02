@@ -65,3 +65,30 @@ body {
 * {
   border-color: var(--border);
 }
+
+/* -----------------------------------------------------------
+ * Clover iframe payment fields
+ * The Clover SDK injects an <iframe> into each mount point. By default the
+ * iframe renders at its own intrinsic height (hundreds of px). These rules
+ * force the iframe to fill its parent so the fixed-height wrappers in
+ * CloverPaymentFields cap the visual field height to a single line.
+ * ----------------------------------------------------------- */
+#clover-card-number,
+#clover-card-date,
+#clover-card-cvv,
+#clover-card-postal-code {
+  display: block;
+  width: 100%;
+  height: 44px;
+  overflow: hidden;
+  position: relative;
+}
+
+#clover-card-number iframe,
+#clover-card-date iframe,
+#clover-card-cvv iframe,
+#clover-card-postal-code iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+}
