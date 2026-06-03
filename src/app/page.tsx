@@ -19,7 +19,7 @@ import { USMap } from "@/components/us-map";
 export const metadata: Metadata = {
   title: "Medical Window Tint Exemption Online | All 50 States | Online Tint Exemption",
   description:
-    "Get your legal medical window tint exemption online from a licensed physician. Fast 24-48 hour approval, 100% money-back guarantee. Serving all 50 states. $249 flat rate.",
+    "Get your legal medical window tint exemption online from a licensed physician. Fast 24-48 hour approval, 100% money-back guarantee. Serving 32 states + DC. Pricing from $225.",
   keywords: [
     "medical window tint exemption",
     "window tint medical exemption online",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Medical Window Tint Exemption Online | Online Tint Exemption",
     description:
-      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, all 50 states, $249.",
+      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, 32 states + DC, from $225.",
     url: "https://www.onlinetintexemption.com",
     siteName: "Online Tint Exemption",
     type: "website",
@@ -190,7 +190,7 @@ export default function Home() {
       "@type": "Country",
       name: "United States",
     },
-    priceRange: "$249",
+    priceRange: "$225\u2013$350",
     sameAs: [],
   };
 
@@ -210,7 +210,7 @@ export default function Home() {
     },
     offers: {
       "@type": "Offer",
-      price: "249",
+      price: "225",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://www.onlinetintexemption.com/book",
@@ -298,9 +298,10 @@ export default function Home() {
               </a>
             </div>
             <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="text-2xl font-bold text-foreground">$249</span>
-                <span className="line-through text-muted-foreground">$349</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-muted-foreground">From</span>
+                <span className="text-2xl font-bold text-foreground">$225</span>
+                <span className="line-through text-muted-foreground">$325</span>
               </span>
               <span className="rounded-full bg-secondary/20 text-secondary px-3 py-1 text-xs font-semibold">
                 Save $100
@@ -363,8 +364,9 @@ export default function Home() {
               Select Your State to Get Started
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our licensed physicians can issue medical tint exemptions for all
-              50 states. Select your state to see specific requirements.
+              We currently issue medical tint exemptions in 32 states + DC.
+              Select your state on the map below to check availability,
+              pricing, and requirements.
             </p>
           </div>
           {/* Interactive Map - Desktop only */}
@@ -373,21 +375,55 @@ export default function Home() {
           </div>
 
           {/* Grid - Mobile / Tablet */}
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:hidden">
-            {allStates.map((state) => (
-              <Link
-                key={state.slug}
-                href={`/${state.slug}-window-tint-medical-exemption`}
-                className="group flex items-center gap-2.5 rounded-lg border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {state.abbreviation}
-                </div>
-                <span className="font-medium text-card-foreground text-sm truncate">
-                  {state.name}
-                </span>
-              </Link>
-            ))}
+          <div className="mt-12 lg:hidden">
+            {/* Status legend */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-5 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="text-muted-foreground">Available now</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                <span className="text-muted-foreground">Allowed — not offered</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+                <span className="text-muted-foreground">No exemption</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {allStates.map((state) => {
+                const dotColor = !state.allowsMedicalExemption
+                  ? "bg-red-500"
+                  : state.offered
+                  ? "bg-green-500"
+                  : "bg-yellow-500";
+                return (
+                  <Link
+                    key={state.slug}
+                    href={`/${state.slug}-window-tint-medical-exemption`}
+                    className="group flex items-center gap-2.5 rounded-lg border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      {state.abbreviation}
+                    </div>
+                    <span className="font-medium text-card-foreground text-sm truncate">
+                      {state.name}
+                    </span>
+                    <span
+                      className={`ml-auto h-2.5 w-2.5 shrink-0 rounded-full ${dotColor}`}
+                      title={
+                        !state.allowsMedicalExemption
+                          ? "No medical exemption"
+                          : state.offered
+                          ? "Available now"
+                          : "Exemption allowed \u2014 not offered by us"
+                      }
+                    />
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -483,9 +519,10 @@ export default function Home() {
               <ChevronRight className="ml-2 h-5 w-5" />
             </Link>
             <div className="mt-4 flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-foreground">$249</span>
+              <span className="text-sm font-medium text-muted-foreground">From</span>
+              <span className="text-2xl font-bold text-foreground">$225</span>
               <span className="text-lg line-through text-muted-foreground">
-                $349
+                $325
               </span>
               <span className="rounded-full bg-secondary/20 text-secondary px-3 py-1 text-xs font-semibold">
                 Save $100
