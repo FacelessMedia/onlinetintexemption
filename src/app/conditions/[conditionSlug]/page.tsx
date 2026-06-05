@@ -179,6 +179,29 @@ export default async function ConditionPage({ params }: PageProps) {
 
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
+                Explore More Before You Apply
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {condition.name} is one of many qualifying conditions for a medical
+                window tint exemption. Browse our{" "}
+                <Link href="/conditions" className="text-primary hover:underline">
+                  full list of qualifying medical conditions
+                </Link>{" "}
+                to see whether others may also apply to you, review common questions
+                on our{" "}
+                <Link href="/faq" className="text-primary hover:underline">
+                  window tint exemption FAQ
+                </Link>
+                , or{" "}
+                <Link href="/book" className="text-primary hover:underline">
+                  start your online application
+                </Link>{" "}
+                to have a licensed physician review your documentation.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Living and Driving with {condition.name}
               </h2>
               <p className="text-muted-foreground leading-relaxed">
