@@ -90,6 +90,23 @@ export default function FAQPage() {
         </div>
       </section>
 
+      {/* Explore More */}
+      <section className="bg-background pb-4">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Explore More</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <Link href="/conditions" className="text-primary hover:underline">All qualifying medical conditions</Link>
+            <Link href="/conditions/migraines" className="text-primary hover:underline">Tint exemption for migraines</Link>
+            <Link href="/conditions/lupus" className="text-primary hover:underline">Tint exemption for lupus</Link>
+            <Link href="/conditions/photophobia" className="text-primary hover:underline">Tint exemption for photophobia</Link>
+            <Link href="/california-window-tint-medical-exemption" className="text-primary hover:underline">California tint exemption</Link>
+            <Link href="/florida-window-tint-medical-exemption" className="text-primary hover:underline">Florida tint exemption</Link>
+            <Link href="/texas-window-tint-medical-exemption" className="text-primary hover:underline">Texas tint exemption</Link>
+            <Link href="/about" className="text-primary hover:underline">About Online Tint Exemption</Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-background py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
