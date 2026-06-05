@@ -26,11 +26,6 @@ import {
   requiredDocumentation,
   isPrequalified,
 } from "@/lib/prequalification";
-import {
-  CloverPaymentFields,
-  translateCloverError,
-  type CloverPaymentFieldsHandle,
-} from "@/components/clover-payment-fields";
 
 const SITE_NAME = "Online Tint Exemption";
 
@@ -118,11 +113,13 @@ export function BookingForm({
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormData>(initialFormData);
   const disqualifyRef = useRef<HTMLDivElement>(null);
-  const cloverRef = useRef<CloverPaymentFieldsHandle>(null);
   const [disqualifyReason, setDisqualifyReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  // Clover Hosted Checkout URL returned by /api/submit-order. The buyer is
+  // redirected here to pay on Clover's hosted page (which records their name).
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const fullPrice = `$${price}`;
   const displayPrice = IS_TEST_MODE ? TEST_MODE_PRICE : fullPrice;
@@ -288,24 +285,11 @@ export function BookingForm({
     setError(null);
 
     try {
-      // 1. Tokenize card via Clover iframe (card data never touches our server).
-      if (!cloverRef.current) {
-        throw new Error("Payment form is still loading. Please wait a moment.");
-      }
-      let sourceToken: string;
-      try {
-        sourceToken = await cloverRef.current.tokenize();
-      } catch (cloverErr) {
-        const msg =
-          cloverErr instanceof Error
-            ? translateCloverError(cloverErr.message)
-            : translateCloverError(String(cloverErr));
-        throw new Error(msg);
-      }
-
-      // 2. Submit order with the source token. We send stateSlug so the SERVER
-      // can look up the authoritative price — the client-sent amount is never
-      // trusted for the charge.
+      // Submit the application. The server upserts the GHL contact/opportunity
+      // and creates a Clover Hosted Checkout session, returning a one-time
+      // payment URL. We send stateSlug so the SERVER looks up the authoritative
+      // price — the client-sent amount is never trusted. Card data is collected
+      // on Clover's hosted page (never our form), which records the buyer name.
       const res = await fetch("/api/submit-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -330,7 +314,6 @@ export function BookingForm({
           timeZone: form.timeZone,
           howDidYouHear: form.howDidYouHear,
           docUploadChoice: form.docUploadChoice,
-          sourceToken,
         }),
       });
 
@@ -371,30 +354,55 @@ export function BookingForm({
         throw new Error(serverMessage);
       }
 
-      // Capture contactId from the server's success payload — we need it to
-      // attach uploaded files to the contact's FILE_UPLOAD custom field.
+      // Capture contactId + the Clover Hosted Checkout URL from the success
+      // payload. contactId attaches uploaded files to the contact's
+      // FILE_UPLOAD custom field; checkoutUrl is where we send the buyer to pay.
       let returnedContactId: string | null = null;
+      let returnedCheckoutUrl: string | null = null;
       try {
         const successData = await res.json();
         if (typeof successData?.contactId === "string" && successData.contactId) {
           returnedContactId = successData.contactId;
           setContactId(returnedContactId);
         }
+        if (typeof successData?.checkoutUrl === "string" && successData.checkoutUrl) {
+          returnedCheckoutUrl = successData.checkoutUrl;
+          setCheckoutUrl(returnedCheckoutUrl);
+        }
       } catch {
-        // Non-JSON or parse error — request still succeeded; we just can't
-        // auto-trigger uploads. The customer can email docs as a fallback.
+        // Non-JSON or parse error — fall through to the missing-url guard below.
       }
+
+      if (!returnedCheckoutUrl) {
+        throw new Error(
+          "We couldn't start secure payment. Please try again or contact support."
+        );
+      }
+
+      // Show the "redirecting to payment" screen, then send the buyer STRAIGHT
+      // to Clover's hosted checkout — no extra click. We FIRST await any staged
+      // document uploads, because navigating away would cancel in-flight upload
+      // requests and we'd lose the customer's medical docs. Errors are swallowed
+      // inside uploadOne so a single bad file never blocks payment (the contact
+      // already exists in GHL and they can email docs as a fallback).
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Kick off file uploads in parallel for any files staged during Step 2.
       if (returnedContactId && form.docUploadChoice === "now") {
-        uploadedDocs.forEach((doc, idx) => {
-          if (doc.status === "ready") {
-            void uploadOne(doc.file, idx, returnedContactId as string);
-          }
-        });
+        const pending = uploadedDocs
+          .map((doc, idx) => ({ doc, idx }))
+          .filter(({ doc }) => doc.status === "ready");
+        if (pending.length > 0) {
+          await Promise.all(
+            pending.map(({ doc, idx }) =>
+              uploadOne(doc.file, idx, returnedContactId as string)
+            )
+          );
+        }
       }
+
+      // Hand off to Clover's secure hosted payment page.
+      window.location.href = returnedCheckoutUrl;
     } catch (err) {
       console.error("[booking-form] submit failed:", err);
       const msg =
@@ -414,14 +422,30 @@ export function BookingForm({
     return (
       <div className="mx-auto max-w-2xl rounded-xl border border-green-500/30 bg-green-500/10 p-8">
         <div className="text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-green-400" />
           <h2 className="mt-4 text-2xl font-bold text-green-300">
-            Payment Received
+            Redirecting to Secure Payment…
           </h2>
           <p className="mt-3 text-green-200/90">
             Thank you, {form.firstName}! Your {stateName} window tint medical
-            exemption application has been received. A licensed physician will
-            review your documentation within 24 hours.
+            exemption application is saved. We&apos;re sending you to our secure
+            payment page to complete your {displayPrice} payment. Please
+            don&apos;t close this window.
+          </p>
+
+          {checkoutUrl && (
+            <a
+              href={checkoutUrl}
+              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 sm:w-auto sm:px-10"
+            >
+              Continue to Secure Payment — {displayPrice}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </a>
+          )}
+          <p className="mt-3 text-center text-xs text-green-200/80">
+            <Shield className="mr-1 inline h-3.5 w-3.5" />
+            If you are not redirected automatically, click the button above.
+            Payment is processed securely by Clover.
           </p>
         </div>
 
@@ -848,7 +872,7 @@ export function BookingForm({
               Required Documentation
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              You must provide at least one of the following:
+              You must provide ALL of the following documents:
             </p>
           </div>
 
@@ -1238,8 +1262,21 @@ export function BookingForm({
                   </div>
                 </div>
 
-                {/* Payment Section — Clover iframe (card data never touches our server) */}
-                <CloverPaymentFields ref={cloverRef} />
+                {/* Payment Section — collected on Clover's hosted page. After
+                    submit, the buyer is redirected to Clover's secure checkout
+                    to enter their card (which records their name). */}
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    Secure Payment — {displayPrice}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    After you submit your application, you&apos;ll be taken to our
+                    payment processor (Clover) to complete your {displayPrice}{" "}
+                    payment securely. Your card details are entered on
+                    Clover&apos;s encrypted page and never touch our servers.
+                  </p>
+                </div>
 
                 {/* Co-branding + privacy notice so the MyEyeRx receipt is never a surprise */}
                 <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -1326,7 +1363,7 @@ export function BookingForm({
                       </>
                     ) : (
                       <>
-                        Submit Application — {displayPrice}{" "}
+                        Submit &amp; Continue to Payment{" "}
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </>
                     )}
