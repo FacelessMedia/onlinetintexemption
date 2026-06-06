@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `Book ${state.name} Tint Exemption Consultation`,
     description: `Book your medical window tint exemption consultation for ${state.name}. Licensed physicians, $${state.price}, 24-48 hour delivery.`,
+    robots: { index: false, follow: true },
   };
 }
 

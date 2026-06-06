@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Refund Policy",
   description: "Refund Policy for Online Tint Exemption. 100% money-back guarantee if you don't qualify.",
+  robots: { index: false, follow: true },
 };
 
 export default function RefundPolicyPage() {

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Book Your Consultation | Get Your Tint Exemption",
   description:
     "Select your state to book a medical window tint exemption consultation. Licensed physicians, 32 states + DC, from $225.",
+  robots: { index: false, follow: true },
 };
 
 const steps = [
