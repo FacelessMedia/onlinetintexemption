@@ -1,3 +1,8 @@
+export interface BlogFAQ {
+  question: string;
+  answer: string;
+}
+
 export interface BlogPost {
   title: string;
   slug: string;
@@ -10,9 +15,19 @@ export interface BlogPost {
   excerpt: string;
   content: string[];
   featured: boolean;
+  // Optional rich fields used by engine-generated posts
+  metaTitle?: string;
+  metaDescription?: string;
+  dateModified?: string;
+  datePublished?: string;
+  tldr?: string;
+  bodyHtml?: string;
+  faqs?: BlogFAQ[];
 }
 
-export const blogPosts: BlogPost[] = [
+import { generatedPosts } from "./blog-generated";
+
+const handWrittenPosts: BlogPost[] = [
   {
     title: "10 Essential Dark Mode Settings Every Light-Sensitive Person Should Know",
     slug: "dark-mode-settings-light-sensitivity",
@@ -122,6 +137,8 @@ export const blogCategories = [
   { name: "Product Reviews", slug: "product-reviews" },
   { name: "Nutrition & Health", slug: "nutrition-health" },
 ];
+
+export const blogPosts: BlogPost[] = [...handWrittenPosts, ...generatedPosts];
 
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find((p) => p.slug === slug);
