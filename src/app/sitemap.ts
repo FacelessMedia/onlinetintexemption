@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllStateSlugs } from "@/data/states";
 import { getAllConditionSlugs } from "@/data/conditions";
+import { getAllBlogSlugs } from "@/data/blog";
 
 const BASE = "https://www.onlinetintexemption.com";
 
@@ -33,5 +34,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...statePages, ...conditionPages];
+  const blogPages: MetadataRoute.Sitemap = getAllBlogSlugs().map((slug) => ({
+    url: `${BASE}/blog/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...statePages, ...conditionPages, ...blogPages];
 }
