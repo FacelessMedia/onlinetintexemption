@@ -7,6 +7,7 @@ const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID!;
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID!;
 const GHL_STAGE_DOCS_SUBMITTED = process.env.GHL_STAGE_DOCS_SUBMITTED!;
 const GHL_STAGE_NO_DOCS = process.env.GHL_STAGE_NO_DOCS!;
+const GHL_STAGE_INFO_SUBMITTED = process.env.GHL_STAGE_INFO_SUBMITTED!;
 const SITE_NAME = process.env.SITE_NAME || "online-tint-exemption";
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
@@ -167,10 +168,7 @@ async function createOpportunity(
   // open one, keeping the customer in the pipeline either way.
   const oppPayload = {
     pipelineId: GHL_PIPELINE_ID,
-    pipelineStageId:
-      data.docUploadChoice === "now"
-        ? GHL_STAGE_DOCS_SUBMITTED
-        : GHL_STAGE_NO_DOCS,
+    pipelineStageId: GHL_STAGE_INFO_SUBMITTED,
     locationId: GHL_LOCATION_ID,
     contactId,
     name: `${data.firstName} ${data.lastName} - ${data.state} Tint Exemption`,
