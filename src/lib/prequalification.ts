@@ -59,17 +59,7 @@ export const requiredDocumentation = [
   {
     title: "Medical Records or Doctor's Note",
     description:
-      "Documentation from your physician, ophthalmologist, dermatologist, or specialist that confirms your qualifying condition.",
-  },
-  {
-    title: "Valid Government-Issued Photo ID",
-    description:
-      "A current driver's license, state ID, or passport for identity verification.",
-  },
-  {
-    title: "Vehicle Information",
-    description:
-      "Year, make, model, and VIN of the vehicle(s) the exemption will apply to.",
+      "Documentation from your physician, ophthalmologist, dermatologist, or specialist that confirms your qualifying condition. This is the only document required — do NOT upload a driver's license, ID, or vehicle information.",
   },
 ] as const;
 

@@ -872,7 +872,7 @@ export function BookingForm({
               Required Documentation
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              You must provide ALL of the following documents:
+              You must provide the following document:
             </p>
           </div>
 
