@@ -190,7 +190,7 @@ export default function Home() {
       "@type": "Country",
       name: "United States",
     },
-    priceRange: "$225\u2013$350",
+    priceRange: "$225–$350",
     sameAs: [],
   };
 
@@ -417,7 +417,7 @@ export default function Home() {
                           ? "No medical exemption"
                           : state.offered
                           ? "Available now"
-                          : "Exemption allowed \u2014 not offered by us"
+                          : "Exemption allowed — not offered by us"
                       }
                     />
                   </Link>
