@@ -26,6 +26,7 @@ import {
   requiredDocumentation,
   isPrequalified,
 } from "@/lib/prequalification";
+import { PurchasePauseGate } from "@/components/purchase-pause";
 
 const SITE_NAME = "Online Tint Exemption";
 
@@ -549,7 +550,8 @@ export function BookingForm({
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="relative mx-auto max-w-4xl">
+      <PurchasePauseGate />
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between">

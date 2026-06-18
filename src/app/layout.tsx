@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PauseBanner } from "@/components/purchase-pause";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/layout/header";
@@ -51,7 +52,8 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <Header />
+          <PauseBanner />
+        <Header />
           <main className="flex-1">{children}</main>
           <Footer />
           <Chatbot />
