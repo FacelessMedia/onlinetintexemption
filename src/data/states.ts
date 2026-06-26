@@ -376,7 +376,7 @@ const offeredPricing: Record<string, { price: number; originalPrice: number }> =
   TX: { price: 225, originalPrice: 325 },
   VA: { price: 250, originalPrice: 350 },
   WA: { price: 225, originalPrice: 325 },
-  WV: { price: 225, originalPrice: 325 },
+  WV: { price: 250, originalPrice: 350 },
   WI: { price: 225, originalPrice: 325 },
   WY: { price: 250, originalPrice: 350 },
   DC: { price: 250, originalPrice: 350 },
