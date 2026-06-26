@@ -86,7 +86,7 @@ export async function createStripeCheckoutSession(
     metadata,
     // Mirror metadata onto the PaymentIntent so any downstream reconciler that
     // reads charges/payment-intents (not just checkout sessions) sees identity.
-    payment_intent_data: { metadata },
+    payment_intent_data: { metadata, receipt_email: input.customer?.email || undefined },
     allow_promotion_codes: false,
   });
 
