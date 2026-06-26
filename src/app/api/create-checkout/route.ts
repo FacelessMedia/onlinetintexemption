@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // ---- Create the hosted checkout session (Stripe or Clover) ----
     stage = "checkout";
-    const amount = isTestMode() ? 100 : priceDollars * 100;
+    const amount = isTestMode() ? (Number(process.env.STRIPE_TEST_AMOUNT_CENTS) || 100) : priceDollars * 100;
     const productName = `${stateName} Tint Exemption${isTestMode() ? " [TEST]" : ""}`;
 
     const metadata: Record<string, string> = {
@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
       state_slug: body.stateSlug,
       email: body.email || "",
       site_name: ghlConfig.siteName,
+      customer_name: [body.firstName, body.lastName].filter(Boolean).join(" "),
       ghl_contact_id: body.contactId,
       docs: requiresDocs ? "yes" : (body.docsUploaded ? "yes" : "no"),
     };

@@ -18,6 +18,20 @@ function getStripe(): Stripe {
   return new Stripe(key);
 }
 
+async function notifyDiscord(content: string): Promise<void> {
+  const url = process.env.DISCORD_WEBHOOK_URL || "";
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+  } catch (err) {
+    console.error("stripe-webhook discord notify failed:", err);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
   const signature = request.headers.get("stripe-signature") || "";
@@ -58,6 +72,17 @@ export async function POST(request: NextRequest) {
         const wonStage = hasDocs ? ghlConfig.stageDocsSubmitted : ghlConfig.stageNoDocs;
         await moveOpportunityStage(opportunityId, wonStage, "won").catch(() => {});
       }
+
+      // Celebratory sale ping to Discord (best-effort; never blocks the 200).
+      const amountStr = ((session.amount_total || 0) / 100).toLocaleString("en-US", {
+        style: "currency",
+        currency: (session.currency || "usd").toUpperCase(),
+      });
+      const siteStr = md.site || md.site_name || "one of our sites";
+      const customerStr = md.customer_name || session.customer_details?.name || "a customer";
+      await notifyDiscord(
+        `Congrats you got a sale on ${siteStr} for ${amountStr} by ${customerStr}`
+      );
 
       console.log(
         `stripe-webhook: payment confirmed contact=${contactId || "?"} opp=${opportunityId || "?"} amount=${session.amount_total}`
