@@ -485,10 +485,10 @@ export function BookingForm({
       <div className="mx-auto max-w-2xl rounded-xl border border-green-500/30 bg-green-500/10 p-8">
         <div className="text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-green-400" />
-          <h2 className="mt-4 text-2xl font-bold text-green-300">
+          <h2 className="mt-4 text-2xl font-bold text-green-700">
             Redirecting to Secure Payment…
           </h2>
-          <p className="mt-3 text-green-200/90">
+          <p className="mt-3 text-green-800">
             Thank you, {form.firstName}! Your {stateName} window tint medical
             exemption application is saved. We&apos;re sending you to our secure
             payment page to complete your {displayPrice} payment. Please
@@ -504,7 +504,7 @@ export function BookingForm({
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>
           )}
-          <p className="mt-3 text-center text-xs text-green-200/80">
+          <p className="mt-3 text-center text-xs text-green-800">
             <Shield className="mr-1 inline h-3.5 w-3.5" />
             If you are not redirected automatically, click the button above.
             Payment is processed securely by our payment provider.
@@ -531,9 +531,9 @@ export function BookingForm({
               {uploadedDocs.map((doc, idx) => {
                 const tone =
                   doc.status === "done"
-                    ? "border-green-500/30 bg-green-500/10 text-green-300"
+                    ? "border-green-500/30 bg-green-500/10 text-green-700"
                     : doc.status === "error"
-                      ? "border-red-500/30 bg-red-500/10 text-red-300"
+                      ? "border-red-500/30 bg-red-500/10 text-red-700"
                       : "border-primary/30 bg-primary/10 text-primary";
                 return (
                   <div
@@ -568,14 +568,14 @@ export function BookingForm({
                       )}
                     </div>
                     {doc.status === "error" && doc.error && (
-                      <p className="mt-1 text-xs text-red-300">{doc.error}</p>
+                      <p className="mt-1 text-xs text-red-700">{doc.error}</p>
                     )}
                   </div>
                 );
               })}
             </div>
             {hasUploadError && (
-              <p className="mt-3 text-xs text-red-300">
+              <p className="mt-3 text-xs text-red-700">
                 Some files didn&apos;t upload. Click <strong>Retry</strong> to
                 try again, or email them to{" "}
                 <a
@@ -602,7 +602,7 @@ export function BookingForm({
           </div>
         )}
 
-        <p className="mt-6 text-center text-sm text-green-200/80">
+        <p className="mt-6 text-center text-sm text-green-800">
           We will reach out to <strong>{form.email}</strong> with next steps.
           Please check your inbox (and spam folder).
         </p>
@@ -827,10 +827,10 @@ export function BookingForm({
               >
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                 <div>
-                  <p className="text-sm font-medium text-red-300">
+                  <p className="text-sm font-medium text-red-700">
                     {disqualifyReason}
                   </p>
-                  <p className="mt-1 text-xs text-red-300/80">
+                  <p className="mt-1 text-xs text-red-700">
                     If you believe this is an error, please contact us for
                     assistance.
                   </p>
@@ -862,10 +862,10 @@ export function BookingForm({
           {/* Pre-Approved Banner */}
           <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-5 text-center">
             <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
-            <h2 className="mt-3 text-xl font-bold text-green-300 sm:text-2xl">
+            <h2 className="mt-3 text-xl font-bold text-green-700 sm:text-2xl">
               You Are Pre-Approved!
             </h2>
-            <p className="mt-2 text-sm text-green-200/90">
+            <p className="mt-2 text-sm text-green-800">
               Based on your responses, you prequalify for a {stateName} window
               tint medical exemption. Please read the documentation requirements
               below carefully before proceeding.
@@ -877,10 +877,10 @@ export function BookingForm({
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-500" />
               <div>
-                <h3 className="text-base font-bold text-red-300">
+                <h3 className="text-base font-bold text-red-700">
                   Important: Read Before Paying
                 </h3>
-                <ul className="mt-2 space-y-2 text-sm text-red-200/90">
+                <ul className="mt-2 space-y-2 text-sm text-red-800">
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
@@ -1061,7 +1061,7 @@ export function BookingForm({
                         <button
                           type="button"
                           onClick={() => removeFile(idx)}
-                          className="shrink-0 text-xs text-red-400 hover:text-red-300"
+                          className="shrink-0 text-xs text-red-400 hover:text-red-700"
                         >
                           Remove
                         </button>
@@ -1114,8 +1114,8 @@ export function BookingForm({
                 onChange={(e) => updateField("agreesNoRefund", e.target.checked)}
                 className="mt-0.5 h-5 w-5 shrink-0 rounded border-red-400 text-red-500 focus:ring-red-500"
               />
-              <span className="text-sm text-red-200/90">
-                <strong className="text-red-300">I understand and agree:</strong>{" "}
+              <span className="text-sm text-red-800">
+                <strong className="text-red-700">I understand and agree:</strong>{" "}
                 If I purchase this service without having legitimate medical
                 documentation to support my condition, my application will be
                 denied and <strong>no refund will be issued</strong>. It is my
@@ -1167,7 +1167,7 @@ export function BookingForm({
               {error && (
                 <div className="mt-4 flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                   <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-                  <p className="text-sm text-red-300">{error}</p>
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}
 
@@ -1370,9 +1370,9 @@ export function BookingForm({
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
                     After you submit your application, you&apos;ll be taken to our
-                    payment processor (Clover) to complete your {displayPrice}{" "}
+                    secure payment processor to complete your {displayPrice}{" "}
                     payment securely. Your card details are entered on
-                    Clover&apos;s encrypted page and never touch our servers.
+                    an encrypted page and never touch our servers.
                   </p>
                 </div>
 
