@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStateBySlug } from "@/data/states";
-import { createHostedCheckoutSession } from "@/lib/clover-checkout";
 
 const GHL_API_KEY = process.env.GHL_API_KEY!;
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID!;
 const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID!;
-const GHL_STAGE_DOCS_SUBMITTED = process.env.GHL_STAGE_DOCS_SUBMITTED!;
-const GHL_STAGE_NO_DOCS = process.env.GHL_STAGE_NO_DOCS!;
 const GHL_STAGE_INFO_SUBMITTED = process.env.GHL_STAGE_INFO_SUBMITTED!;
 const SITE_NAME = process.env.SITE_NAME || "online-tint-exemption";
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
-// Clover (production) — Hosted Checkout flow. Card is collected on Clover's
-// hosted page so the buyer's name is recorded natively in Clover (the old
-// inline /v1/charges flow left the buyer blank).
-const CLOVER_PRIVATE = process.env.CLOVER_PRIVATE!;
-const CLOVER_TEST_MODE = process.env.CLOVER_TEST_MODE === "true";
+// $250+ orders cannot pay until medical docs are uploaded. We surface this to
+// the client so the booking form can branch into the no-docs follow-up path;
+// the gate itself is ENFORCED server-side in /api/create-checkout.
+const DOCS_REQUIRED_MIN_PRICE = Number(process.env.DOCS_REQUIRED_MIN_PRICE || "250");
 
 // GHL custom field IDs — mapped from the (shared) location's custom fields.
 // Identical to the single-state EMD sites because onlinetint uses the same
@@ -151,13 +147,6 @@ async function findOrCreateContact(data: OrderPayload) {
   return contactId;
 }
 
-async function addTagToContact(contactId: string, tag: string) {
-  await ghlFetch(`/contacts/${contactId}/tags`, {
-    method: "POST",
-    body: JSON.stringify({ tags: [tag] }),
-  });
-}
-
 async function createOpportunity(
   contactId: string,
   data: OrderPayload,
@@ -190,60 +179,6 @@ async function createOpportunity(
 
   const upserted = await res.json();
   return upserted.opportunity?.id || upserted.id;
-}
-
-// ------- Clover Hosted Checkout -------
-
-async function createCheckoutForOrder(
-  data: OrderPayload,
-  amount: number,
-  contactId: string | undefined,
-  opportunityId: string | undefined
-): Promise<{ checkoutUrl: string; checkoutSessionId: string; amount: number }> {
-  const productName = `${data.state} Tint Exemption${CLOVER_TEST_MODE ? " [TEST]" : ""}`;
-
-  // Metadata propagates onto the Clover order. `source_system` / `site` /
-  // `ghl_synced` make the sister site (myeyerx.net) — which shares this Clover
-  // merchant — SKIP our charges in its reconciler instead of pulling our
-  // buyers into its CRM. The rest carries identity for our own records.
-  const metadata: Record<string, string> = {
-    source_system: "tint-exemption-sites",
-    site: "onlinetintexemption.com",
-    ghl_synced: "true",
-    state: data.state,
-    state_slug: data.stateSlug,
-    email: data.email,
-    site_name: SITE_NAME,
-  };
-  if (contactId) metadata.ghl_contact_id = contactId;
-  if (opportunityId) metadata.ghl_opportunity_id = opportunityId;
-
-  try {
-    const session = await createHostedCheckoutSession({
-      productName,
-      amountCents: amount,
-      customer: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phoneNumber: data.phone,
-      },
-      metadata,
-    });
-    return {
-      checkoutUrl: session.href,
-      checkoutSessionId: session.checkoutSessionId,
-      amount,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("Clover hosted checkout error:", message);
-    throw new StageError(
-      "clover-checkout",
-      "We couldn't start secure payment. Please try again or contact support.",
-      message.slice(0, 400)
-    );
-  }
 }
 
 // StageError carries the failing pipeline stage along with the user-facing
@@ -293,7 +228,6 @@ export async function POST(request: NextRequest) {
 
     stage = "env-check";
     const missingEnv: string[] = [];
-    if (!CLOVER_PRIVATE) missingEnv.push("CLOVER_PRIVATE");
     if (!GHL_API_KEY) missingEnv.push("GHL_API_KEY");
     if (!GHL_LOCATION_ID) missingEnv.push("GHL_LOCATION_ID");
     if (!GHL_PIPELINE_ID) missingEnv.push("GHL_PIPELINE_ID");
@@ -306,16 +240,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const amount = CLOVER_TEST_MODE ? 100 : priceDollars * 100;
+    // Whether this order must have medical docs before we can take payment.
+    const requiresDocs = priceDollars >= DOCS_REQUIRED_MIN_PRICE;
 
-    // Step 1: Upsert GHL contact FIRST — before creating the Clover Hosted
-    // Checkout session and redirecting the buyer to Clover's page. If we can't
-    // sync the customer to GHL we should not start payment. Even if the buyer
-    // abandons checkout, the lead (and any uploaded docs) are captured.
+    // Upsert the GHL contact FIRST. The lead is ALWAYS captured here — even a
+    // $250+ applicant who never uploads docs becomes a contact we can follow up
+    // with. Payment is a separate, gated step in /api/create-checkout.
     stage = "ghl-contact";
     const contactId = await findOrCreateContact(body);
 
-    // Step 1b: Opportunity creation IS best-effort.
+    // Opportunity creation IS best-effort.
     stage = "ghl-opportunity";
     let opportunityId: string | undefined;
     try {
@@ -324,30 +258,12 @@ export async function POST(request: NextRequest) {
       console.error("GHL opportunity creation failed:", oppErr);
     }
 
-    // Step 2: Create a Clover Hosted Checkout session. The buyer is redirected
-    // to Clover's hosted page to pay (card never touches us) and Clover records
-    // the buyer's name natively. Failures here ARE fatal.
-    stage = "clover-checkout";
-    const checkout = await createCheckoutForOrder(body, amount, contactId, opportunityId);
-
-    // Step 3: Tag GHL contact as awaiting payment — best-effort, never fatal.
-    // The reconciler flips it to "paid" once the hosted-checkout payment settles.
-    stage = "ghl-tag";
-    if (contactId) {
-      try {
-        await addTagToContact(contactId, "checkout-started");
-      } catch (tagErr) {
-        console.error("GHL tag update failed (checkout created):", tagErr);
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      checkoutUrl: checkout.checkoutUrl,
-      checkoutSessionId: checkout.checkoutSessionId,
-      amount: checkout.amount,
       contactId,
       opportunityId,
+      requiresDocs,
+      price: priceDollars,
     });
   } catch (err) {
     console.error(`Submit order error at stage=${stage}:`, err);

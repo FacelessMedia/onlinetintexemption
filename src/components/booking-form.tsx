@@ -97,8 +97,15 @@ const initialFormData: FormData = {
 // When NEXT_PUBLIC_CLOVER_TEST_MODE is "true", the server charges $1.00 instead
 // of the per-state price. Mirror that in the UI so users see what will actually
 // post to their card. Both flags must be unset on Vercel to go live.
-const IS_TEST_MODE = process.env.NEXT_PUBLIC_CLOVER_TEST_MODE === "true";
+const IS_TEST_MODE =
+  process.env.NEXT_PUBLIC_CLOVER_TEST_MODE === "true" ||
+  process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true";
 const TEST_MODE_PRICE = "$1.00";
+
+// Orders priced at/above this require medical docs before we can take payment.
+// Mirrors the server default (DOCS_REQUIRED_MIN_PRICE); the gate is ENFORCED in
+// /api/create-checkout — this is only for up-front UX branching.
+const DOCS_REQUIRED_MIN_PRICE = 250;
 
 // Shared field styles (onlinetint token theme)
 const inputClass =
@@ -118,12 +125,18 @@ export function BookingForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  // Clover Hosted Checkout URL returned by /api/submit-order. The buyer is
-  // redirected here to pay on Clover's hosted page (which records their name).
+  // Hosted checkout URL returned by /api/create-checkout. The buyer is
+  // redirected here to pay (Stripe or Clover, per PAYMENT_PROVIDER).
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  // Set when a $250+ applicant submits WITHOUT docs: we saved them as a lead and
+  // will follow up for documentation — no payment is taken.
+  const [leadOnlyMessage, setLeadOnlyMessage] = useState<string | null>(null);
 
   const fullPrice = `$${price}`;
   const displayPrice = IS_TEST_MODE ? TEST_MODE_PRICE : fullPrice;
+  // $250+ orders are gated on documentation. When true and the buyer doesn't
+  // upload docs, the form captures them as a follow-up lead and takes NO payment.
+  const requiresDocs = price >= DOCS_REQUIRED_MIN_PRICE;
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -274,8 +287,16 @@ export function BookingForm({
 
   function handleStep2Submit() {
     if (!form.agreesNoRefund || !form.docUploadChoice) return;
-    // Files are NOT uploaded yet at this point — they're held in memory and
-    // will upload AFTER payment using the contactId we get back.
+    // For $250+ orders the "upload now" path must include at least one file —
+    // payment is gated on documentation. (The "later" path is allowed: it
+    // becomes a no-charge follow-up lead.)
+    if (
+      requiresDocs &&
+      form.docUploadChoice === "now" &&
+      uploadedDocs.length === 0
+    ) {
+      return;
+    }
     setStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -286,11 +307,10 @@ export function BookingForm({
     setError(null);
 
     try {
-      // Submit the application. The server upserts the GHL contact/opportunity
-      // and creates a Clover Hosted Checkout session, returning a one-time
-      // payment URL. We send stateSlug so the SERVER looks up the authoritative
-      // price — the client-sent amount is never trusted. Card data is collected
-      // on Clover's hosted page (never our form), which records the buyer name.
+      // Phase 1 — Lead capture. Always upserts the GHL contact/opportunity (even
+      // a $250+ applicant who never uploads docs becomes a follow-up lead) and
+      // returns whether docs are required. We send stateSlug so the SERVER looks
+      // up the authoritative price — the client-sent amount is never trusted.
       const res = await fetch("/api/submit-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -320,33 +340,18 @@ export function BookingForm({
 
       if (!res.ok) {
         let serverMessage = "";
-        let stage: string | undefined;
-        let detail: string | undefined;
         const ct = res.headers.get("content-type") ?? "";
         if (ct.includes("application/json")) {
           try {
             const data = await res.json();
             serverMessage = String(data?.error ?? data?.message ?? "");
-            stage = data?.stage;
-            detail = data?.detail;
-            console.error("[submit-order] error response:", {
-              status: res.status,
-              error: serverMessage,
-              stage,
-              detail,
-              data,
-            });
+            console.error("[submit-order] error response:", { status: res.status, data });
           } catch (parseErr) {
             console.error("[submit-order] failed to parse JSON error:", parseErr);
           }
         } else {
           try {
             serverMessage = (await res.text()).slice(0, 500);
-            console.error("[submit-order] non-JSON error response:", {
-              status: res.status,
-              statusText: res.statusText,
-              body: serverMessage,
-            });
           } catch {}
         }
         if (!serverMessage) {
@@ -355,55 +360,89 @@ export function BookingForm({
         throw new Error(serverMessage);
       }
 
-      // Capture contactId + the Clover Hosted Checkout URL from the success
-      // payload. contactId attaches uploaded files to the contact's
-      // FILE_UPLOAD custom field; checkoutUrl is where we send the buyer to pay.
-      let returnedContactId: string | null = null;
-      let returnedCheckoutUrl: string | null = null;
-      try {
-        const successData = await res.json();
-        if (typeof successData?.contactId === "string" && successData.contactId) {
-          returnedContactId = successData.contactId;
-          setContactId(returnedContactId);
+      const lead = await res.json();
+      const newContactId: string | null =
+        typeof lead?.contactId === "string" && lead.contactId ? lead.contactId : null;
+      const opportunityId: string | undefined =
+        typeof lead?.opportunityId === "string" ? lead.opportunityId : undefined;
+
+      if (!newContactId) {
+        throw new Error(
+          "We couldn't save your application. Please try again or contact support."
+        );
+      }
+      setContactId(newContactId);
+
+      // Phase 2 — If the buyer chose "upload now", push the files to the contact
+      // BEFORE creating checkout, because the $250+ gate verifies docs exist on
+      // the contact server-side. Errors are swallowed inside uploadOne; a missing
+      // doc simply routes a gated order into the no-charge follow-up path.
+      let uploadedAny = false;
+      if (form.docUploadChoice === "now") {
+        const pending = uploadedDocs
+          .map((doc, idx) => ({ doc, idx }))
+          .filter(({ doc }) => doc.status === "ready" || doc.status === "error");
+        if (pending.length > 0) {
+          await Promise.all(
+            pending.map(({ doc, idx }) => uploadOne(doc.file, idx, newContactId))
+          );
         }
-        if (typeof successData?.checkoutUrl === "string" && successData.checkoutUrl) {
-          returnedCheckoutUrl = successData.checkoutUrl;
-          setCheckoutUrl(returnedCheckoutUrl);
-        }
-      } catch {
-        // Non-JSON or parse error — fall through to the missing-url guard below.
+        uploadedAny = uploadedDocs.length > 0;
       }
 
-      if (!returnedCheckoutUrl) {
+      // Phase 3 — Create the gated hosted checkout session. If docs are required
+      // but missing, the server returns { blocked: true } and we show the
+      // no-charge follow-up message instead of redirecting to payment.
+      const coRes = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactId: newContactId,
+          opportunityId,
+          stateSlug,
+          docsUploaded: uploadedAny,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+        }),
+      });
+
+      const co = await coRes.json().catch(() => ({}));
+
+      if (!coRes.ok) {
+        throw new Error(
+          String(
+            co?.error ||
+              "We couldn't start secure payment. Please try again or contact support."
+          )
+        );
+      }
+
+      if (co?.blocked) {
+        // $250+ submitted without docs — lead saved, no payment taken.
+        setLeadOnlyMessage(
+          String(
+            co?.message ||
+              "Your application is saved. We can only process payment once we receive your medical documentation — check your email for instructions."
+          )
+        );
+        setSuccess(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      if (typeof co?.checkoutUrl !== "string" || !co.checkoutUrl) {
         throw new Error(
           "We couldn't start secure payment. Please try again or contact support."
         );
       }
 
-      // Show the "redirecting to payment" screen, then send the buyer STRAIGHT
-      // to Clover's hosted checkout — no extra click. We FIRST await any staged
-      // document uploads, because navigating away would cancel in-flight upload
-      // requests and we'd lose the customer's medical docs. Errors are swallowed
-      // inside uploadOne so a single bad file never blocks payment (the contact
-      // already exists in GHL and they can email docs as a fallback).
+      setCheckoutUrl(co.checkoutUrl);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-
-      if (returnedContactId && form.docUploadChoice === "now") {
-        const pending = uploadedDocs
-          .map((doc, idx) => ({ doc, idx }))
-          .filter(({ doc }) => doc.status === "ready");
-        if (pending.length > 0) {
-          await Promise.all(
-            pending.map(({ doc, idx }) =>
-              uploadOne(doc.file, idx, returnedContactId as string)
-            )
-          );
-        }
-      }
-
-      // Hand off to Clover's secure hosted payment page.
-      window.location.href = returnedCheckoutUrl;
+      // Hand off to the secure hosted payment page (Stripe or Clover).
+      window.location.href = co.checkoutUrl;
     } catch (err) {
       console.error("[booking-form] submit failed:", err);
       const msg =
@@ -418,6 +457,28 @@ export function BookingForm({
 
   // ---- Success State ----
   if (success) {
+    // No-charge follow-up lead ($250+ submitted without docs).
+    if (leadOnlyMessage) {
+      return (
+        <div className="mx-auto max-w-2xl rounded-xl border border-secondary/30 bg-secondary/10 p-8 text-center">
+          <CheckCircle className="mx-auto h-12 w-12 text-secondary" />
+          <h2 className="mt-4 text-2xl font-bold text-foreground">
+            Application Received
+          </h2>
+          <p className="mt-3 text-muted-foreground">
+            Thank you, {form.firstName}! Your {stateName} window tint medical
+            exemption application is saved.
+          </p>
+          <p className="mt-3 text-foreground">{leadOnlyMessage}</p>
+          <div className="mt-6 rounded-lg border border-border bg-card p-4 text-left text-sm text-muted-foreground">
+            <strong className="text-foreground">No payment was taken.</strong>{" "}
+            We&apos;ll email <strong>{form.email}</strong> with instructions to
+            send your medical documentation. Once we receive it, we&apos;ll
+            process your {fullPrice} payment and issue your exemption.
+          </div>
+        </div>
+      );
+    }
     const showUploads =
       form.docUploadChoice === "now" && uploadedDocs.length > 0;
     return (
@@ -446,7 +507,7 @@ export function BookingForm({
           <p className="mt-3 text-center text-xs text-green-200/80">
             <Shield className="mr-1 inline h-3.5 w-3.5" />
             If you are not redirected automatically, click the button above.
-            Payment is processed securely by Clover.
+            Payment is processed securely by our payment provider.
           </p>
         </div>
 
@@ -903,10 +964,25 @@ export function BookingForm({
               Upload Your Documentation
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Uploading your documents now will{" "}
-              <strong className="text-foreground">expedite the process</strong>{" "}
-              of getting your exemption. You may also upload them later after
-              purchase.
+              {requiresDocs ? (
+                <>
+                  Your state&apos;s exemption requires medical documentation.{" "}
+                  <strong className="text-foreground">
+                    Upload it now to complete payment
+                  </strong>
+                  , or submit without it and we&apos;ll follow up — you
+                  won&apos;t be charged until we receive your documents.
+                </>
+              ) : (
+                <>
+                  Uploading your documents now will{" "}
+                  <strong className="text-foreground">
+                    expedite the process
+                  </strong>{" "}
+                  of getting your exemption. You may also upload them later after
+                  purchase.
+                </>
+              )}
             </p>
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -938,9 +1014,11 @@ export function BookingForm({
               >
                 <Clock className="h-5 w-5" />
                 <div className="text-left">
-                  <span className="block font-semibold">Upload Later</span>
+                  <span className="block font-semibold">
+                    {requiresDocs ? "Submit Without Docs" : "Upload Later"}
+                  </span>
                   <span className="block text-xs text-muted-foreground">
-                    After purchase
+                    {requiresDocs ? "We follow up — no charge now" : "After purchase"}
                   </span>
                 </div>
               </button>
@@ -994,8 +1072,8 @@ export function BookingForm({
 
                 {uploadedDocs.length > 0 && (
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Files will be securely uploaded to your patient record after
-                    payment is complete.
+                    Files are securely uploaded to your patient record when you
+                    submit your application.
                   </p>
                 )}
               </div>
@@ -1004,12 +1082,24 @@ export function BookingForm({
             {form.docUploadChoice === "later" && (
               <div className="mt-4 rounded-lg border border-secondary/30 bg-secondary/10 p-3">
                 <p className="text-sm text-foreground">
-                  You will receive an email after purchase with instructions on
-                  how to upload your documentation.{" "}
-                  <strong>
-                    Your exemption cannot be processed until documentation is
-                    received.
-                  </strong>
+                  {requiresDocs ? (
+                    <>
+                      We&apos;ll save your application and email{" "}
+                      instructions to send your documentation.{" "}
+                      <strong>
+                        No payment is taken until your documents are received.
+                      </strong>
+                    </>
+                  ) : (
+                    <>
+                      You will receive an email after purchase with instructions
+                      on how to upload your documentation.{" "}
+                      <strong>
+                        Your exemption cannot be processed until documentation is
+                        received.
+                      </strong>
+                    </>
+                  )}
                 </p>
               </div>
             )}
@@ -1047,10 +1137,16 @@ export function BookingForm({
             <button
               type="button"
               onClick={handleStep2Submit}
-              disabled={!form.agreesNoRefund || !form.docUploadChoice}
+              disabled={
+                !form.agreesNoRefund ||
+                !form.docUploadChoice ||
+                (requiresDocs &&
+                  form.docUploadChoice === "now" &&
+                  uploadedDocs.length === 0)
+              }
               className="order-1 flex flex-1 items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:order-2"
             >
-              Proceed to Payment <ArrowRight className="ml-2 h-5 w-5" />
+              Continue <ArrowRight className="ml-2 h-5 w-5" />
             </button>
           </div>
         </div>
@@ -1365,7 +1461,9 @@ export function BookingForm({
                       </>
                     ) : (
                       <>
-                        Submit &amp; Continue to Payment{" "}
+                        {requiresDocs && form.docUploadChoice !== "now"
+                          ? "Submit Application"
+                          : "Submit & Continue to Payment"}{" "}
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </>
                     )}
@@ -1389,7 +1487,14 @@ export function BookingForm({
                   <div className="mt-3 rounded-md border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
                     <strong>Test Mode:</strong> your card will be charged{" "}
                     {TEST_MODE_PRICE} instead of {fullPrice}. All other logic is
-                    live (real Clover charge, real GHL contact).
+                    live (real charge, real GHL contact).
+                  </div>
+                )}
+                {requiresDocs && form.docUploadChoice !== "now" && (
+                  <div className="mt-3 rounded-md border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
+                    <strong>No payment today.</strong> Submit your application
+                    and we&apos;ll collect your documents first. You&apos;ll only
+                    be charged {fullPrice} once they&apos;re received.
                   </div>
                 )}
                 <div className="mt-3 space-y-2 text-sm">

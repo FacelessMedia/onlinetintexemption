@@ -131,6 +131,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Tag the contact so the $250+ payment gate (/api/create-checkout) can
+    // verify docs exist server-side without racing the custom-field read.
+    // Non-fatal: the gate also re-reads the custom field directly.
+    try {
+      await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GHL_API_KEY}`,
+          "Content-Type": "application/json",
+          Version: "2021-07-28",
+        },
+        body: JSON.stringify({ tags: ["docs-uploaded"] }),
+      });
+    } catch (tagErr) {
+      console.error("upload-doc: failed to tag docs-uploaded (non-fatal):", tagErr);
+    }
+
     return NextResponse.json({
       success: true,
       fileName: safeName,
