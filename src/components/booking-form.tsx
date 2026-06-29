@@ -59,6 +59,7 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
+  dateOfBirth: string;
   timeZone: string;
   medicalDetails: string;
   medications: string;
@@ -85,6 +86,7 @@ const initialFormData: FormData = {
   lastName: "",
   email: "",
   phone: "",
+  dateOfBirth: "",
   timeZone: "",
   medicalDetails: "",
   medications: "",
@@ -319,6 +321,7 @@ export function BookingForm({
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
+          dateOfBirth: form.dateOfBirth,
           state: stateName,
           stateSlug,
           condition: form.conditions.join(", "),
@@ -405,6 +408,7 @@ export function BookingForm({
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
+          dateOfBirth: form.dateOfBirth,
         }),
       });
 
@@ -1244,6 +1248,24 @@ export function BookingForm({
                   />
                 </div>
 
+                {/* Date of Birth */}
+                <div>
+                  <label
+                    htmlFor="dateOfBirth"
+                    className="block text-sm font-medium text-foreground"
+                  >
+                    Date of Birth *
+                  </label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    required
+                    value={form.dateOfBirth}
+                    onChange={(e) => updateField("dateOfBirth", e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+
                 {/* State (read-only) + Time Zone */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
@@ -1450,7 +1472,7 @@ export function BookingForm({
                   <button
                     type="submit"
                     disabled={
-                      loading || !form.agreeToTerms || !form.agreesToLiability
+                      loading || !form.agreeToTerms || !form.agreesToLiability || !form.dateOfBirth
                     }
                     className="order-1 flex flex-1 items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:order-2"
                   >

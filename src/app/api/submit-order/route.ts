@@ -42,6 +42,7 @@ interface OrderPayload {
   lastName: string;
   email: string;
   phone: string;
+  dateOfBirth: string;
   condition: string;
   details: string;
   medications: string;
@@ -107,6 +108,7 @@ async function findOrCreateContact(data: OrderPayload) {
     lastName: data.lastName,
     email: data.email,
     phone: data.phone,
+    dateOfBirth: data.dateOfBirth,
     source: SITE_NAME,
     tags: [
       SITE_NAME,
@@ -202,7 +204,7 @@ export async function POST(request: NextRequest) {
     const body: OrderPayload = await request.json();
 
     stage = "validate";
-    if (!body.firstName || !body.lastName || !body.email || !body.phone) {
+    if (!body.firstName || !body.lastName || !body.email || !body.phone || !body.dateOfBirth) {
       return NextResponse.json(
         { error: "Missing required patient information.", stage },
         { status: 400 }
