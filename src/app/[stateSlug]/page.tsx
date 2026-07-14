@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${state.name} Window Tint Medical Exemption Guide 2026`,
     description: state.offered
-      ? `Get your ${state.name} medical window tint exemption online. ${state.heroDescription} Fast approval, $${state.price} flat rate.`
+      ? `${state.name} medical window tint exemption education and secure intake. Review state guidance and the currently displayed $${state.price} service price.`
       : `${state.name} window tint laws and medical exemption info. ${state.heroDescription}`,
     keywords: [
       `${state.name} window tint exemption`,
@@ -82,21 +82,20 @@ export default async function StatePage({ params }: PageProps) {
 
   const stateSchema = {
     "@context": "https://schema.org",
-    "@type": "MedicalWebPage",
+    "@type": "WebPage",
     name: `${state.name} Window Tint Medical Exemption Guide`,
     description: state.heroDescription,
     url: pageUrl,
     mainEntity: {
-      "@type": "MedicalProcedure",
-      name: `${state.name} Medical Window Tint Exemption`,
+      "@type": "Service",
+      name: `${state.name} Medical Window Tint Exemption Intake Coordination`,
       description: state.whatIsExemption,
-      howPerformed: "Remote telemedicine consultation via phone with a board-certified physician.",
-      procedureType: "https://schema.org/NoninvasiveProcedure",
+      serviceType: "Medical window tint exemption intake coordination",
       provider: {
-        "@type": "MedicalBusiness",
+        "@type": "Organization",
         name: "Online Tint Exemption",
         url: "https://www.onlinetintexemption.com",
-        telephone: "+1-734-338-8453",
+        telephone: "+1-734-338-9453",
       },
       ...(state.offered ? {
         offers: {
@@ -155,16 +154,14 @@ export default async function StatePage({ params }: PageProps) {
                   href={`/book/${state.slug}`}
                   className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  Get Your {state.abbreviation} Exemption — ${state.price}
+                  Start Secure Intake — ${state.price}
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </Link>
               </div>
             ) : (
               <div className="mt-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
                 <p className="text-sm text-foreground font-semibold">
-                  {state.allowsMedicalExemption
-                    ? `OnlineTintExemption does not currently offer services in ${state.name}. Contact your local DMV or physician for medical exemption options.`
-                    : `${state.name} does not allow medical window tint exemptions.`}
+                  Our current service table does not accept paid intake for {state.name}. Verify the current medical-documentation pathway directly with the responsible state agency because rules can change.
                 </p>
               </div>
             )}
@@ -176,6 +173,12 @@ export default async function StatePage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-12">
+            <section className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-5 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">Educational information only</p>
+              <p className="mt-1">
+                This is not legal or medical advice and is not an official state publication. Window, vehicle, filing, documentation, and renewal rules can change. Verify current requirements with the responsible state agency before changing a vehicle. MyEyeRx coordinates intake and referral; an independent licensed clinician makes any clinical decision. No review or payment guarantees documentation, state acceptance, a particular tint level, or protection from a citation.
+              </p>
+            </section>
             {/* Understanding Section */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
@@ -225,7 +228,7 @@ export default async function StatePage({ params }: PageProps) {
                   <AlertTriangle className="h-5 w-5 text-secondary shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">Tint Ticket Fine: {state.ticketFine}</span>
-                    <span className="text-muted-foreground ml-2">— Get a medical exemption to avoid costly tickets</span>
+                    <span className="text-muted-foreground ml-2">— Educational estimate only; verify the current amount and enforcement rules with the responsible agency</span>
                   </div>
                 </div>
               )}
@@ -234,10 +237,10 @@ export default async function StatePage({ params }: PageProps) {
             {/* Qualifying Conditions */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                Medical Conditions That Qualify for Tint Exemption in {state.name}
+                Conditions and Symptoms That May Be Relevant in {state.name}
               </h2>
               <p className="text-muted-foreground mb-6">
-                Several medical conditions can qualify individuals for a window tint exemption in {state.name}. Understanding these conditions is vital for those seeking protection from light sensitivity.
+                These examples may be relevant to an individualized review, but no listed condition automatically qualifies. State standards and accepted documentation vary.
               </p>
               <div className="space-y-4">
                 {state.qualifyingConditions.map((condition) => (
@@ -257,10 +260,10 @@ export default async function StatePage({ params }: PageProps) {
             {/* How To */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                How to Get Your {state.name} Tint Exemption in 2026
+                How to Review the {state.name} Process in 2026
               </h2>
               <p className="text-muted-foreground mb-6">
-                Obtaining a medical tint exemption in {state.name} involves several straightforward steps.
+                Use these steps as a starting point, then confirm the current state and vehicle requirements with the responsible agency.
               </p>
               <div className="space-y-6">
                 {state.howToSteps.map((step, i) => (
@@ -361,30 +364,26 @@ export default async function StatePage({ params }: PageProps) {
             {state.offered ? (
               <section className="rounded-xl border border-border bg-card p-8">
                 <h2 className="text-2xl font-bold text-card-foreground mb-2">
-                  Get Your {state.name} Window Tint Exemption Today
+                  Start the {state.name} Secure Intake
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Obtaining a window tint medical exemption in {state.name} is essential for individuals suffering from light sensitivity. Don&apos;t wait—apply for your exemption today to ensure a more pleasant driving experience.
+                  Submit accurate screening information and relevant records for intake coordination through MyEyeRx. An independent licensed clinician decides whether the information supports medical documentation; no outcome or state acceptance is guaranteed.
                 </p>
                 <Link
                   href={`/book/${state.slug}`}
                   className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  Get Started — ${state.price}
+                    Start Secure Intake — ${state.price}
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </Link>
               </section>
             ) : (
               <section className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-8">
                 <h2 className="text-2xl font-bold text-card-foreground mb-2">
-                  {state.allowsMedicalExemption
-                    ? `${state.name} Medical Tint Exemption — Not Available Through Us`
-                    : `${state.name} Does Not Allow Medical Tint Exemptions`}
+                  {state.name} Paid Intake Is Not Currently Available
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  {state.allowsMedicalExemption
-                    ? `While ${state.name} does allow medical window tint exemptions, OnlineTintExemption does not currently offer services in this state. We recommend contacting your local DMV or a licensed physician in ${state.name} for assistance.`
-                    : `${state.name} does not have a medical exemption program for window tint. Even with a doctor's note, darker tints beyond the legal limit are not permitted.`}
+                  Our current service table does not accept paid intake for {state.name}. Verify the current medical-documentation pathway, vehicle restrictions, and accepted forms directly with the responsible state agency or a qualified local professional.
                 </p>
                 <Link
                   href="/contact"
@@ -403,15 +402,15 @@ export default async function StatePage({ params }: PageProps) {
               {state.offered ? (
                 <div className="rounded-xl border border-primary/30 bg-card p-6">
                   <h3 className="text-lg font-bold text-card-foreground mb-4">
-                    Get Your {state.name} Exemption
+                    Start {state.name} Intake
                   </h3>
                   <ul className="space-y-3 mb-6">
                     {[
-                      "Licensed physician consultation",
-                      "24-hour certificate delivery",
-                      "100% money-back guarantee",
-                      `Valid in ${state.name}`,
-                      "Secure online process",
+                      "Preliminary suitability screening",
+                      "Secure document upload",
+                      "MyEyeRx booking and referral coordination",
+                      "Independent licensed clinician review",
+                      "Stripe-hosted payment when eligible",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -423,20 +422,17 @@ export default async function StatePage({ params }: PageProps) {
                     href={`/book/${state.slug}`}
                     className="block w-full text-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
-                    Get Started — ${state.price}
+                    Start Intake — ${state.price}
                   </Link>
-                  <p className="mt-2 text-center text-xs text-muted-foreground">Takes less than 5 minutes</p>
-                  <p className="mt-1 text-center text-xs text-muted-foreground">Secure • Confidential • Licensed</p>
+                  <p className="mt-1 text-center text-xs text-muted-foreground">Screening is not approval; state rules vary.</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-yellow-500/30 bg-card p-6">
                   <h3 className="text-lg font-bold text-card-foreground mb-4">
-                    {state.allowsMedicalExemption ? "Exemption Info" : "Tint Law Info"}
+                    State Process Information
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {state.allowsMedicalExemption
-                      ? `OnlineTintExemption does not currently service ${state.name}. Contact your local DMV or physician for medical tint exemption options.`
-                      : `${state.name} does not allow medical tint exemptions. Review the tint laws on this page for legal limits.`}
+                    Paid intake is not currently available for {state.name}. Use the responsible state agency as the authoritative source for current rules and options.
                   </p>
                   <Link
                     href="/contact"

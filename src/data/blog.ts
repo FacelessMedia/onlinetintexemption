@@ -140,14 +140,38 @@ export const blogCategories = [
 
 export const blogPosts: BlogPost[] = [...handWrittenPosts, ...generatedPosts];
 
+function postDate(post: BlogPost): Date | null {
+  const raw = post.datePublished || post.date;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/**
+ * Never expose scheduled or malformed articles as live pages. A future-dated
+ * record remains in source for editorial planning, but is excluded from the
+ * index, static params, direct lookup, author pages, and sitemap until its date.
+ */
+export function publishedBlogPosts(now = new Date()): BlogPost[] {
+  return blogPosts
+    .filter((post) => {
+      const published = postDate(post);
+      return published !== null && published.getTime() <= now.getTime();
+    })
+    .sort((a, b) => {
+      const aDate = postDate(a)?.getTime() || 0;
+      const bDate = postDate(b)?.getTime() || 0;
+      return bDate - aDate;
+    });
+}
+
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
-  return blogPosts.find((p) => p.slug === slug);
+  return publishedBlogPosts().find((p) => p.slug === slug);
 }
 
 export function getAllBlogSlugs(): string[] {
-  return blogPosts.map((p) => p.slug);
+  return publishedBlogPosts().map((p) => p.slug);
 }
 
 export function getFeaturedPosts(): BlogPost[] {
-  return blogPosts.filter((p) => p.featured);
+  return publishedBlogPosts().filter((p) => p.featured);
 }

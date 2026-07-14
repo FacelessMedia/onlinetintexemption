@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  ChevronRight,
   AlertTriangle,
   ClipboardList,
   FileCheck,
@@ -11,17 +10,17 @@ import {
 import { getOfferedStates } from "@/data/states";
 
 export const metadata: Metadata = {
-  title: "Book Your Consultation | Get Your Tint Exemption",
+  title: "Start Secure Intake | Medical Tint Documentation Review",
   description:
-    "Select your state to book a medical window tint exemption consultation. Licensed physicians, 32 states + DC, from $225.",
+    "Select a currently offered state, review its current price, and begin secure medical window-tint documentation intake coordinated through MyEyeRx.",
   robots: { index: false, follow: true },
 };
 
 const steps = [
-  { icon: ClipboardList, label: "Select State", sub: "Choose your state above" },
-  { icon: FileCheck, label: "Intake Form", sub: "5-minute questionnaire" },
-  { icon: Phone, label: "Phone Call", sub: "10-15 min consultation" },
-  { icon: Mail, label: "Certificate", sub: "Delivered via email" },
+  { icon: ClipboardList, label: "Select State", sub: "See current offered pricing" },
+  { icon: FileCheck, label: "Secure Intake", sub: "Provide condition, DOB, and address" },
+  { icon: Mail, label: "Records and Routing", sub: "Secure upload, checkout, or team follow-up" },
+  { icon: Phone, label: "Independent Review", sub: "Outcome and timing are not guaranteed" },
 ];
 
 export default function BookHub() {
@@ -34,11 +33,10 @@ export default function BookHub() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
-              Book Your Consultation
+              Start Secure Intake
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Select your state below to get started with your medical window
-              tint exemption
+              Select a currently offered state to review pricing and begin intake coordinated through MyEyeRx. An independent licensed clinician makes any clinical decision.
             </p>
           </div>
         </div>
@@ -51,14 +49,11 @@ export default function BookHub() {
             <AlertTriangle className="h-6 w-6 text-secondary shrink-0 mt-0.5" />
             <div>
               <h2 className="text-lg font-semibold text-foreground">
-                Medical Documentation Required
+                Supporting Records and Secure Handling
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                You must have medical proof of your condition (doctor&apos;s records,
-                diagnosis letter, or prescription) to receive an exemption. Our
-                physicians practice legitimately. A{" "}
-                <strong className="text-foreground">$25 non-refundable fee</strong> applies
-                if you attend without documentation.
+                For services priced at $250 or more, a relevant supporting document is required before checkout. At $225, records are encouraged but are not required before checkout. Useful records commonly show your name, the treating clinician or facility, and the relevant condition, symptoms, surgery, or treatment; a brief surgery letter on facility letterhead may also help. Upload records only through the secure intake—not ordinary email or chat. A $250+ intake without records is saved for team follow-up and is not sent to Stripe. Payment and review do not guarantee documentation, approval, state acceptance, or timing. Refunds are governed by the{" "}
+                <Link href="/refund-policy" className="font-medium text-primary hover:underline">published refund policy</Link>.
               </p>
             </div>
           </div>

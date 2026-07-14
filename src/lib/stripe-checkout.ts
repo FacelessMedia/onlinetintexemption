@@ -1,8 +1,8 @@
 /**
  * Stripe **Hosted Checkout** session helper.
  *
- * Direct replacement for the Clover hosted-checkout flow: we create a Checkout
- * Session server-side and redirect the buyer to Stripe's hosted page (the card
+ * Creates a Checkout Session server-side and redirects the buyer to Stripe's
+ * hosted page (the card
  * never touches our servers — minimal PCI scope). On success Stripe redirects to
  * successUrl and fires the `checkout.session.completed` webhook, which our
  * /api/stripe-webhook uses to flip the GHL opportunity to paid.
@@ -49,6 +49,10 @@ export interface CreateStripeCheckoutInput {
   successUrl: string;
   /** Absolute URL Stripe redirects to if the buyer cancels. */
   cancelUrl: string;
+  /** Binds the Stripe session to the CRM contact for reconciliation. */
+  clientReferenceId: string;
+  /** Makes retries return the same cart rather than creating a new one. */
+  idempotencyKey: string;
 }
 
 export interface StripeCheckoutResponse {
@@ -68,30 +72,49 @@ export async function createStripeCheckoutSession(
 
   const metadata = input.metadata || {};
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        quantity: input.quantity ?? 1,
-        price_data: {
-          currency: "usd",
-          unit_amount: Math.round(input.amountCents),
-          product_data: { name: input.productName },
+  const session = await stripe.checkout.sessions.create(
+    {
+      mode: "payment",
+      client_reference_id: input.clientReferenceId,
+      line_items: [
+        {
+          quantity: input.quantity ?? 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: Math.round(input.amountCents),
+            product_data: { name: input.productName },
+          },
         },
+      ],
+      customer_email: input.customer?.email || undefined,
+      billing_address_collection: "required",
+      payment_method_types: ["card"],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      metadata,
+      // Mirror metadata onto the PaymentIntent so reconciliation can recover a
+      // paid customer even if a webhook delivery is delayed.
+      payment_intent_data: {
+        metadata,
+        receipt_email: input.customer?.email || undefined,
       },
-    ],
-    customer_email: input.customer?.email || undefined,
-    success_url: input.successUrl,
-    cancel_url: input.cancelUrl,
-    metadata,
-    // Mirror metadata onto the PaymentIntent so any downstream reconciler that
-    // reads charges/payment-intents (not just checkout sessions) sees identity.
-    payment_intent_data: { metadata, receipt_email: input.customer?.email || undefined },
-    allow_promotion_codes: false,
-  });
+      allow_promotion_codes: false,
+    },
+    { idempotencyKey: input.idempotencyKey }
+  );
 
   if (!session.url || !session.id) {
-    throw new Error(`Stripe checkout session missing url/id: ${JSON.stringify(session).slice(0, 300)}`);
+    throw new Error("Stripe checkout session response was incomplete");
   }
   return { href: session.url, checkoutSessionId: session.id };
+}
+
+export async function retrieveStripeCheckoutSession(
+  sessionId: string
+): Promise<Stripe.Checkout.Session> {
+  if (!/^cs_(?:test|live)_[A-Za-z0-9]+$/.test(sessionId)) {
+    throw new Error("Invalid Checkout Session id");
+  }
+  return getStripe().checkout.sessions.retrieve(sessionId);
 }

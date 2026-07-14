@@ -1,239 +1,122 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ChevronRight, Heart, Eye, Award, ShieldCheck } from "lucide-react";
+import { ChevronRight, Eye, ShieldCheck, Users, ClipboardCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Online Tint Exemption",
   description:
-    "Learn about Online Tint Exemption — our mission to make medical tint exemptions accessible to everyone.",
+    "Learn how Online Tint Exemption, MyEyeRx, and independent licensed clinicians work together while maintaining clear roles.",
+  alternates: { canonical: "https://www.onlinetintexemption.com/about" },
 };
 
-const values = [
-  {
-    icon: ShieldCheck,
-    title: "Integrity",
-    description: "We only approve exemptions for legitimate medical needs. No shortcuts, no compromises.",
-  },
+const roles = [
   {
     icon: Eye,
-    title: "Accessibility",
-    description: "Everyone deserves access to medical care, regardless of location or schedule.",
+    title: "Online Tint Exemption",
+    description:
+      "Publishes state-focused education and provides the secure intake experience. It does not diagnose, prescribe, or promise an exemption.",
   },
   {
-    icon: Award,
-    title: "Quality",
-    description: "All our physicians are board-certified and licensed in the states they serve.",
+    icon: Users,
+    title: "MyEyeRx",
+    description:
+      "The official partner for consultation booking, referrals, administrative coordination, and customer follow-up.",
   },
   {
-    icon: Heart,
-    title: "Care",
-    description: "We treat every patient with compassion and respect their medical privacy.",
-  },
-];
-
-const whyChoose = [
-  "No in-person visits required",
-  "Licensed physicians in all 50 states",
-  "Fast 24-hour approval process",
-  "100% money-back guarantee",
-  "Secure & confidential",
-  "Lifetime customer support",
-];
-
-const team = [
-  {
-    initials: "TD",
-    name: "Toriano Dewberry",
-    role: "Founder & Licensed Optician & CEO",
-    bio: "Licensed optician dedicated to helping light-sensitive patients get the relief they deserve through accessible telemedicine solutions.",
-    href: "/about/toriano-dewberry",
+    icon: ClipboardCheck,
+    title: "Independent Clinicians",
+    description:
+      "Appropriately licensed physicians or optometrists make the clinical decision and may request more information, approve, or decline.",
   },
   {
-    initials: "DB",
-    name: "Dr. B",
-    role: "Medical Director, Board Certified Physician",
-    bio: "Board-certified physician specializing in telemedicine consultations for light-sensitive medical conditions and exemption evaluations.",
-    href: "/about/dr-b",
+    icon: ShieldCheck,
+    title: "State Authorities",
+    description:
+      "Government agencies and law enforcement determine applicable forms, filing rules, tint limits, and acceptance—not this website.",
   },
-];
+] as const;
 
 export default function AboutPage() {
   return (
-    <>
-      {/* Hero */}
+    <main>
       <section className="bg-background py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
-              Making Medical Tint Exemptions Accessible to{" "}
-              <span className="text-primary">Everyone</span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground">
-              We believe that people with legitimate medical conditions
-              shouldn&apos;t have to struggle to get the protection they need.
-              That&apos;s why we created Online Tint Exemption.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Origin Story */}
-      <section className="bg-card py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-card-foreground">Born from a Real Need</h2>
-            <div className="mt-6 space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                Online Tint Exemption was founded when our team member struggled
-                to get a medical tint exemption for their photosensitivity
-                condition. The process was frustrating – multiple doctor visits,
-                confusing paperwork, and weeks of waiting.
-              </p>
-              <p>
-                We knew there had to be a better way. So we built a platform
-                that connects patients directly with licensed physicians who
-                specialize in these exemptions.
-              </p>
-              <p>
-                Today, we&apos;ve helped thousands of people across all 50
-                states get the legal protection they need, quickly and
-                affordably.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Values */}
-      <section className="bg-background py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-foreground text-center">What We Stand For</h2>
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((v) => (
-              <div key={v.title} className="text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary mb-4">
-                  <v.icon className="h-7 w-7" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground">{v.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{v.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose */}
-      <section className="bg-card py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-card-foreground">
-              Why People Choose Online Tint Exemption
-            </h2>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-              {whyChoose.map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-lg border border-border bg-background p-4">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <ChevronRight className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Telemedicine */}
-      <section className="bg-background py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-foreground">Telemedicine Done Right</h2>
-            <div className="mt-6 space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                We&apos;re not just another online form. Our platform connects
-                you with real, licensed physicians who take the time to
-                understand your condition.
-              </p>
-              <p>
-                Every consultation is thorough, every exemption is legitimate,
-                and every customer is treated with care.
-              </p>
-              <p>
-                If you don&apos;t qualify for an exemption, we&apos;ll tell you
-                honestly – and refund your money completely.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="bg-card py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-card-foreground">Meet the Team</h2>
-            <p className="mt-4 text-muted-foreground">
-              Dedicated professionals committed to helping light-sensitive
-              patients get the care they deserve.
-            </p>
-          </div>
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            {team.map((member) => (
-              <Link
-                key={member.name}
-                href={member.href}
-                className="group rounded-xl border border-border bg-background p-6 hover:border-primary hover:shadow-lg transition-all"
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary text-xl font-bold mb-4">
-                  {member.initials}
-                </div>
-                <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {member.name}
-                </h3>
-                <p className="text-sm text-primary font-medium mt-1">{member.role}</p>
-                <p className="text-sm text-muted-foreground mt-3">{member.bio}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Explore More */}
-      <section className="bg-background py-16 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground text-center mb-8">Explore More</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <Link href="/conditions" className="text-primary hover:underline">All qualifying medical conditions</Link>
-            <Link href="/conditions/migraines" className="text-primary hover:underline">Tint exemption for migraines</Link>
-            <Link href="/conditions/lupus" className="text-primary hover:underline">Tint exemption for lupus</Link>
-            <Link href="/conditions/photophobia" className="text-primary hover:underline">Tint exemption for photophobia</Link>
-            <Link href="/california-window-tint-medical-exemption" className="text-primary hover:underline">California tint exemption</Link>
-            <Link href="/florida-window-tint-medical-exemption" className="text-primary hover:underline">Florida tint exemption</Link>
-            <Link href="/texas-window-tint-medical-exemption" className="text-primary hover:underline">Texas tint exemption</Link>
-            <Link href="/faq" className="text-primary hover:underline">Frequently asked questions</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-background py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-foreground">Ready to Get Your Exemption?</h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of satisfied customers who got their medical tint
-            exemption through Online Tint Exemption.
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <p className="font-semibold text-primary">Who we are</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Clear information, secure intake, and clearly separated roles
+          </h1>
+          <p className="mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+            Online Tint Exemption helps visitors understand state-specific
+            medical window tint processes and begin an intake. MyEyeRx is our
+            official consultation-booking and referral partner. Independent
+            licensed clinicians—not the website or administrative staff—make
+            clinical decisions.
           </p>
-          <div className="mt-8">
-            <Link
-              href="/book"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Get Started Now
-              <ChevronRight className="ml-2 h-5 w-5" />
+        </div>
+      </section>
+
+      <section className="bg-card py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold text-card-foreground">
+            What connects to what
+          </h2>
+          <div className="mt-12 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
+            {roles.map((role) => (
+              <article key={role.title} className="rounded-xl border border-border bg-background p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <role.icon className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">{role.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{role.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-background py-16 sm:py-20">
+        <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">What the intake can do</h2>
+            <ul className="mt-5 space-y-3 text-muted-foreground">
+              <li>• Show the current service price configured for a supported state.</li>
+              <li>• Collect required contact, address, condition, and documentation information.</li>
+              <li>• Route complete and incomplete documentation into the appropriate follow-up path.</li>
+              <li>• Send an eligible order to Stripe-hosted checkout after server-side checks.</li>
+            </ul>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">What it cannot promise</h2>
+            <ul className="mt-5 space-y-3 text-muted-foreground">
+              <li>• A diagnosis, prescription, approval, certificate, or delivery time.</li>
+              <li>• That a DMV, court, officer, installer, or another state will accept a document.</li>
+              <li>• A particular tint percentage, window, renewal period, or legal outcome.</li>
+              <li>• That an online screening replaces medical care or legal advice.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-card py-16">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-card-foreground">Learn more or get help</h2>
+          <p className="mt-3 text-muted-foreground">
+            Read how clinical review works, learn about founder Toriano Dewberry,
+            or contact MyEyeRx before submitting if you are unsure about a document.
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href="/about/clinical-providers" className="inline-flex items-center justify-center rounded-lg border border-border px-5 py-3 font-semibold text-foreground hover:bg-muted">
+              Clinical provider roles<ChevronRight className="ml-1 h-4 w-4" />
+            </Link>
+            <Link href="/about/toriano-dewberry" className="inline-flex items-center justify-center rounded-lg border border-border px-5 py-3 font-semibold text-foreground hover:bg-muted">
+              About Toriano<ChevronRight className="ml-1 h-4 w-4" />
+            </Link>
+            <Link href="/contact" className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground hover:bg-primary/90">
+              Contact MyEyeRx<ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

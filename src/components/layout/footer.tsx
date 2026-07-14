@@ -34,22 +34,22 @@ export function Footer() {
             <div className="flex items-center justify-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <div>
-                <div className="text-sm font-semibold text-card-foreground">Money-Back Guarantee</div>
-                <div className="text-xs text-muted-foreground">Full refund if you don&apos;t qualify</div>
+                <div className="text-sm font-semibold text-card-foreground">Secure Intake</div>
+                <div className="text-xs text-muted-foreground">Stripe-hosted payment and protected upload controls</div>
               </div>
             </div>
             <div className="flex items-center justify-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
               <div>
-                <div className="text-sm font-semibold text-card-foreground">Fast Approval</div>
-                <div className="text-xs text-muted-foreground">Certificate in 24-48 hours</div>
+                <div className="text-sm font-semibold text-card-foreground">Clear Follow-Up</div>
+                <div className="text-xs text-muted-foreground">Our team contacts you if more information is needed</div>
               </div>
             </div>
             <div className="flex items-center justify-center gap-2">
               <FileCheck className="h-5 w-5 text-primary" />
               <div>
-                <div className="text-sm font-semibold text-card-foreground">All 50 States</div>
-                <div className="text-xs text-muted-foreground">Licensed physicians nationwide</div>
+                <div className="text-sm font-semibold text-card-foreground">MyEyeRx Partner</div>
+                <div className="text-xs text-muted-foreground">Independent licensed providers make clinical decisions</div>
               </div>
             </div>
           </div>
@@ -70,22 +70,23 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Get your medical window tint exemption online. Licensed physicians, fast approval, all 50 states.
+              State-specific education and secure intake, officially partnered
+              with MyEyeRx for consultation coordination and referrals.
             </p>
             <div className="space-y-2">
               <a
-                href="mailto:support@onlinetintexemption.com"
+                href="mailto:Tory@myeyerx.net"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Mail className="h-4 w-4" />
-                support@onlinetintexemption.com
+                Tory@myeyerx.net
               </a>
               <a
-                href="tel:+17343388453"
+                href="tel:+17343389453"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Phone className="h-4 w-4" />
-                (734) 338-8453
+                (734) 338-9453
               </a>
             </div>
           </div>
@@ -159,7 +160,9 @@ export function Footer() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
             <p>
-              Medical Disclaimer: This service provides telemedicine consultations with licensed physicians. Exemption approval is based on medical evaluation.
+              Online Tint Exemption provides education and intake. MyEyeRx
+              coordinates booking and referrals; independent licensed providers
+              make clinical decisions. No outcome or agency acceptance is guaranteed.
             </p>
             <p className="shrink-0">© 2026 Online Tint Exemption. All rights reserved.</p>
           </div>

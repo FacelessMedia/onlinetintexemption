@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, ChevronDown, Phone, Shield } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
-import { cn } from "@/lib/utils";
 
 const popularStates = [
   { name: "Texas", slug: "texas" },
@@ -35,15 +34,15 @@ export function Header() {
       <div className="bg-primary/10 text-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between py-1.5">
           <a
-            href="tel:+17343388453"
+            href="tel:+17343389453"
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone className="h-3.5 w-3.5" />
-            <span>Questions? Call (734) 338-8453</span>
+            <span>Questions? Call (734) 338-9453</span>
           </a>
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />
-            <span>Licensed Physicians · All 50 States</span>
+            <span>Officially partnered with MyEyeRx</span>
           </div>
         </div>
       </div>
@@ -102,7 +101,7 @@ export function Header() {
                       href="/#states"
                       className="block px-3 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md transition-colors"
                     >
-                      View All 50 States →
+                      View Available States →
                     </Link>
                   </div>
                 </div>
@@ -219,7 +218,7 @@ export function Header() {
               onClick={() => setMobileOpen(false)}
               className="block px-6 py-2 text-sm font-medium text-primary hover:bg-muted rounded-md"
             >
-              View All 50 States →
+              View Available States →
             </Link>
             <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Conditions

@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="space-y-6 text-muted-foreground leading-relaxed">
           <p><strong className="text-foreground">Effective Date:</strong> January 1, 2026</p>
-          <p><strong className="text-foreground">Last Updated:</strong> January 1, 2026</p>
+          <p><strong className="text-foreground">Last Updated:</strong> July 14, 2026</p>
 
           <p>
             Online Tint Exemption (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects your privacy and is committed to
@@ -33,8 +33,9 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-bold text-foreground pt-4">1. Information We Collect</h2>
           <p>We may collect the following types of information:</p>
           <ul className="list-disc ml-6 space-y-1">
-            <li>Personal identification information (name, email address, phone number)</li>
+            <li>Personal identification information (name, date of birth, residential address, email address, and phone number)</li>
             <li>Medical information related to your condition (as provided during consultation)</li>
+            <li>Medical documentation you choose to submit through the secure uploader</li>
             <li>Payment information (processed securely through our payment provider)</li>
             <li>State of residence</li>
             <li>Usage data and analytics</li>
@@ -43,28 +44,33 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-bold text-foreground pt-4">2. How We Use Your Information</h2>
           <p>We use the information we collect to:</p>
           <ul className="list-disc ml-6 space-y-1">
-            <li>Facilitate telemedicine consultations with licensed physicians</li>
-            <li>Process payments and issue medical exemption certificates</li>
-            <li>Communicate with you about your consultation and certificate</li>
+            <li>Operate the intake and coordinate next steps with MyEyeRx and independent licensed providers</li>
+            <li>Process eligible payments through Stripe</li>
+            <li>Communicate with you about your application and requested documentation</li>
             <li>Improve our website and services</li>
             <li>Comply with legal obligations</li>
           </ul>
 
           <h2 className="text-xl font-bold text-foreground pt-4">3. Information Security</h2>
           <p>
-            We implement bank-level encryption (SSL/TLS) and industry-standard security measures
-            to protect your personal and medical information. Your data is transmitted and stored
-            using encrypted protocols.
+            We use administrative, technical, and access controls intended to protect personal
+            information, including encrypted network connections where supported. No system can
+            guarantee absolute security, so medical records should be submitted only through the
+            secure intake uploader and never through chat or ordinary email.
           </p>
 
           <h2 className="text-xl font-bold text-foreground pt-4">4. Information Sharing</h2>
           <p>
-            We do not sell, trade, or otherwise transfer your personal information to third parties.
-            Your information may be shared only with:
+            We do not sell personal information. We disclose information as needed to operate the
+            requested service, including to:
           </p>
           <ul className="list-disc ml-6 space-y-1">
-            <li>Licensed physicians conducting your consultation</li>
-            <li>Payment processors for transaction completion</li>
+            <li>MyEyeRx for consultation-booking, referral, and administrative coordination</li>
+            <li>Independent licensed providers conducting clinical review</li>
+            <li>GoHighLevel for intake and customer-relationship operations</li>
+            <li>Stripe for eligible payment processing</li>
+            <li>Document-security and malware-scanning providers that inspect uploads before they enter our records platform</li>
+            <li>Hosting, security, and support vendors acting on our instructions</li>
             <li>As required by law or legal process</li>
           </ul>
 
@@ -91,12 +97,6 @@ export default function PrivacyPolicyPage() {
             </a>
           </p>
 
-          <div className="rounded-lg border border-border bg-card p-4 mt-8">
-            <p className="text-sm text-muted-foreground">
-              <strong className="text-card-foreground">Note:</strong> This privacy policy is a template and should be
-              reviewed by a legal professional before final publication.
-            </p>
-          </div>
         </div>
       </div>
     </section>

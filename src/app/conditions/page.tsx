@@ -4,9 +4,9 @@ import { ChevronRight } from "lucide-react";
 import { getAllConditions } from "@/data/conditions";
 
 export const metadata: Metadata = {
-  title: "Medical Conditions That Qualify for Tint Exemptions",
+  title: "Medical Conditions and Window Tint Exemptions",
   description:
-    "Learn about medical conditions that qualify for window tint exemptions. Migraines, lupus, photophobia, cataracts, and more.",
+    "Educational information about light-sensitive symptoms, medical documentation, and state-specific window tint exemption rules.",
 };
 
 export default function ConditionsHub() {
@@ -19,11 +19,12 @@ export default function ConditionsHub() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
-              Medical Conditions That Qualify for Tint Exemptions
+              Medical Conditions and Light Sensitivity
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Many light-sensitive medical conditions qualify for window tint
-              exemptions. Learn about your condition and how to get protected.
+              Learn how light-sensitive symptoms may relate to state window tint
+              exemption rules and what documentation an independent clinician may
+              need to review. A diagnosis alone does not guarantee eligibility.
             </p>
           </div>
         </div>
@@ -59,18 +60,20 @@ export default function ConditionsHub() {
       <section className="bg-background py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-foreground">
-            Not Sure If Your Condition Qualifies?
+            Not Sure What Documentation You Need?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our licensed physicians will evaluate your specific situation during
-            your consultation. If you don&apos;t qualify, you get a full refund.
+            Requirements vary by state. Start the secure intake or contact us before
+            paying if you have questions. Clinical decisions are made only by an
+            independent licensed provider; review our refund policy for the terms
+            that apply to your order.
           </p>
           <div className="mt-8">
             <Link
               href="/book"
               className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Start Your Application
+              Start Secure Intake
               <ChevronRight className="ml-2 h-5 w-5" />
             </Link>
           </div>

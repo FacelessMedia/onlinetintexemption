@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   ArrowLeft,
@@ -24,9 +25,10 @@ import {
   frequencyOptions,
   timeZoneOptions,
   requiredDocumentation,
-  isPrequalified,
+  passesInitialScreening,
 } from "@/lib/prequalification";
 import { PurchasePauseGate } from "@/components/purchase-pause";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 
 const SITE_NAME = "Online Tint Exemption";
 
@@ -40,7 +42,7 @@ interface BookingFormProps {
 }
 
 interface FormData {
-  // Step 1 — Prequalification
+  // Step 1 — preliminary screening (not clinical approval)
   conditions: string[];
   otherCondition: string;
   duration: string;
@@ -53,13 +55,17 @@ interface FormData {
   // Step 2 — Documentation
   docUploadChoice: "now" | "later" | "";
   uploadedFileNames: string[];
-  agreesNoRefund: boolean;
+  acknowledgesDocumentation: boolean;
   // Step 3 — Patient Info + Payment
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  postalCode: string;
   timeZone: string;
   medicalDetails: string;
   medications: string;
@@ -67,6 +73,7 @@ interface FormData {
   howDidYouHear: string;
   agreeToTerms: boolean;
   agreesToLiability: boolean;
+  website: string;
 }
 
 const initialFormData: FormData = {
@@ -81,12 +88,16 @@ const initialFormData: FormData = {
   currentTintPercent: "",
   docUploadChoice: "",
   uploadedFileNames: [],
-  agreesNoRefund: false,
+  acknowledgesDocumentation: false,
   firstName: "",
   lastName: "",
   email: "",
   phone: "",
   dateOfBirth: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  postalCode: "",
   timeZone: "",
   medicalDetails: "",
   medications: "",
@@ -94,20 +105,16 @@ const initialFormData: FormData = {
   howDidYouHear: "",
   agreeToTerms: false,
   agreesToLiability: false,
+  website: "",
 };
-
-// When NEXT_PUBLIC_CLOVER_TEST_MODE is "true", the server charges $1.00 instead
-// of the per-state price. Mirror that in the UI so users see what will actually
-// post to their card. Both flags must be unset on Vercel to go live.
-const IS_TEST_MODE =
-  process.env.NEXT_PUBLIC_CLOVER_TEST_MODE === "true" ||
-  process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true";
-const TEST_MODE_PRICE = "$1.00";
 
 // Orders priced at/above this require medical docs before we can take payment.
 // Mirrors the server default (DOCS_REQUIRED_MIN_PRICE); the gate is ENFORCED in
 // /api/create-checkout — this is only for up-front UX branching.
 const DOCS_REQUIRED_MIN_PRICE = 250;
+const TURNSTILE_ENABLED = Boolean(
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+);
 
 // Shared field styles (onlinetint token theme)
 const inputClass =
@@ -118,27 +125,34 @@ export function BookingForm({
   stateName,
   stateSlug,
   price,
-  originalPrice,
 }: BookingFormProps) {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormData>(initialFormData);
+  const formStartedAt = useRef(Date.now()).current;
+  const submissionId = useRef(crypto.randomUUID()).current;
   const disqualifyRef = useRef<HTMLDivElement>(null);
   const [disqualifyReason, setDisqualifyReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  // Hosted checkout URL returned by /api/create-checkout. The buyer is
-  // redirected here to pay (Stripe or Clover, per PAYMENT_PROVIDER).
+  // Hosted Stripe Checkout URL returned by /api/create-checkout.
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   // Set when a $250+ applicant submits WITHOUT docs: we saved them as a lead and
   // will follow up for documentation — no payment is taken.
   const [leadOnlyMessage, setLeadOnlyMessage] = useState<string | null>(null);
+  const [orderToken, setOrderToken] = useState<string | null>(null);
+  const [uploadReceipt, setUploadReceipt] = useState<string | null>(null);
+  const [botToken, setBotToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const fullPrice = `$${price}`;
-  const displayPrice = IS_TEST_MODE ? TEST_MODE_PRICE : fullPrice;
+  const displayPrice = fullPrice;
   // $250+ orders are gated on documentation. When true and the buyer doesn't
   // upload docs, the form captures them as a follow-up lead and takes NO payment.
   const requiresDocs = price >= DOCS_REQUIRED_MIN_PRICE;
+  const isLeadOnlyPath =
+    requiresDocs && form.docUploadChoice === "later";
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -158,7 +172,7 @@ export function BookingForm({
 
   function handleStep1Submit() {
     setDisqualifyReason(null);
-    const result = isPrequalified({
+    const result = passesInitialScreening({
       conditions: form.conditions,
       duration: form.duration,
       frequency: form.frequency,
@@ -166,8 +180,10 @@ export function BookingForm({
       isIntendedDriver: form.isIntendedDriver,
       hasSeenDoctor: form.hasSeenDoctor,
     });
-    if (!result.qualified) {
-      setDisqualifyReason(result.reason || "You do not qualify at this time.");
+    if (!result.canContinue) {
+      setDisqualifyReason(
+        result.reason || "You cannot continue online based on these responses."
+      );
       setTimeout(
         () =>
           disqualifyRef.current?.scrollIntoView({
@@ -182,11 +198,8 @@ export function BookingForm({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Per-file upload tracking. Files are CHOSEN (held in browser memory) during
-  // Step 2 but only uploaded to GHL AFTER payment succeeds, when we have the
-  // contactId returned by /api/submit-order. Uploading post-payment lets us
-  // attach files directly to the contact's HIPAA-scoped FILE_UPLOAD custom
-  // field rather than to a public-CDN media library.
+  // Files are held in browser memory during Step 2, then uploaded after the
+  // signed order session is created and before Stripe Checkout is requested.
   type UploadStatus = "ready" | "uploading" | "done" | "error";
   interface UploadedDoc {
     file: File;
@@ -196,13 +209,16 @@ export function BookingForm({
     error?: string;
   }
   const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
-  const [contactId, setContactId] = useState<string | null>(null);
   const isAnyUploading = uploadedDocs.some((d) => d.status === "uploading");
   const hasUploadError = uploadedDocs.some((d) => d.status === "error");
   const allUploadsDone =
     uploadedDocs.length > 0 && uploadedDocs.every((d) => d.status === "done");
 
-  async function uploadOne(file: File, indexInState: number, cId: string) {
+  async function uploadOne(
+    file: File,
+    indexInState: number,
+    signedOrderToken: string
+  ): Promise<string | null> {
     setUploadedDocs((prev) =>
       prev.map((d, i) =>
         i === indexInState
@@ -213,7 +229,7 @@ export function BookingForm({
     try {
       const fd = new globalThis.FormData();
       fd.append("file", file);
-      fd.append("contactId", cId);
+      fd.append("orderToken", signedOrderToken);
       const res = await fetch("/api/upload-doc", {
         method: "POST",
         body: fd,
@@ -229,15 +245,20 @@ export function BookingForm({
             i === indexInState ? { ...d, status: "error", error: msg } : d
           )
         );
-        return;
+        return null;
       }
+      const data = (await res.json()) as { uploadReceipt?: unknown };
+      if (typeof data.uploadReceipt !== "string" || !data.uploadReceipt) {
+        throw new Error("The secure upload confirmation was missing. Please retry.");
+      }
+      setUploadReceipt(data.uploadReceipt);
       setUploadedDocs((prev) =>
         prev.map((d, i) =>
           i === indexInState ? { ...d, status: "done", error: undefined } : d
         )
       );
-    } catch (err) {
-      console.error("[upload-doc] network error:", err);
+      return data.uploadReceipt;
+    } catch {
       setUploadedDocs((prev) =>
         prev.map((d, i) =>
           i === indexInState
@@ -250,6 +271,7 @@ export function BookingForm({
             : d
         )
       );
+      return null;
     }
   }
 
@@ -282,13 +304,13 @@ export function BookingForm({
   }
 
   function retryUpload(index: number) {
-    if (!contactId) return;
+    if (!orderToken) return;
     const doc = uploadedDocs[index];
-    if (doc) void uploadOne(doc.file, index, contactId);
+    if (doc) void uploadOne(doc.file, index, orderToken);
   }
 
   function handleStep2Submit() {
-    if (!form.agreesNoRefund || !form.docUploadChoice) return;
+    if (!form.acknowledgesDocumentation || !form.docUploadChoice) return;
     // For $250+ orders the "upload now" path must include at least one file —
     // payment is gated on documentation. (The "later" path is allowed: it
     // becomes a no-charge follow-up lead.)
@@ -307,13 +329,18 @@ export function BookingForm({
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setUploadWarning(null);
 
     try {
+      let newOrderToken: string | null = orderToken;
       // Phase 1 — Lead capture. Always upserts the GHL contact/opportunity (even
       // a $250+ applicant who never uploads docs becomes a follow-up lead) and
       // returns whether docs are required. We send stateSlug so the SERVER looks
       // up the authoritative price — the client-sent amount is never trusted.
-      const res = await fetch("/api/submit-order", {
+      // A checkout/provider retry reuses the already signed order instead of
+      // creating a fresh order JTI that would invalidate its upload receipt.
+      if (!newOrderToken) {
+        const res = await fetch("/api/submit-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -322,9 +349,14 @@ export function BookingForm({
           email: form.email,
           phone: form.phone,
           dateOfBirth: form.dateOfBirth,
-          state: stateName,
+          addressLine1: form.addressLine1,
+          addressLine2: form.addressLine2,
+          city: form.city,
+          postalCode: form.postalCode,
+          submissionId,
           stateSlug,
-          condition: form.conditions.join(", "),
+          conditions: form.conditions,
+          otherCondition: form.otherCondition,
           details: form.medicalDetails,
           medications: form.medications,
           duration: form.duration,
@@ -338,81 +370,130 @@ export function BookingForm({
           timeZone: form.timeZone,
           howDidYouHear: form.howDidYouHear,
           docUploadChoice: form.docUploadChoice,
+          acknowledgesDocumentation: form.acknowledgesDocumentation,
+          agreeToTerms: form.agreeToTerms,
+          agreesToLiability: form.agreesToLiability,
+          botToken: botToken || undefined,
+          website: form.website,
+          formStartedAt,
         }),
-      });
+        });
 
-      if (!res.ok) {
-        let serverMessage = "";
         const ct = res.headers.get("content-type") ?? "";
-        if (ct.includes("application/json")) {
-          try {
-            const data = await res.json();
-            serverMessage = String(data?.error ?? data?.message ?? "");
-            console.error("[submit-order] error response:", { status: res.status, data });
-          } catch (parseErr) {
-            console.error("[submit-order] failed to parse JSON error:", parseErr);
+        const lead = ct.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
+        if (!res.ok) {
+          // A token is returned only after the $250+ per-opportunity alert is
+          // confirmed. If no token was returned, refresh the single-use bot
+          // challenge and retry this same stable submission reference.
+          if (typeof lead?.orderToken === "string" && lead.orderToken) {
+            newOrderToken = lead.orderToken;
+            setOrderToken(lead.orderToken);
+          } else {
+            setBotToken("");
+            setTurnstileResetKey((value) => value + 1);
           }
-        } else {
-          try {
-            serverMessage = (await res.text()).slice(0, 500);
-          } catch {}
+          throw new Error(
+            String(
+              lead?.error ||
+                lead?.message ||
+                `Unexpected server response (${res.status}). Please try again or contact support.`
+            )
+          );
         }
-        if (!serverMessage) {
-          serverMessage = `Unexpected server response (${res.status}). Please try again or contact support.`;
+
+        newOrderToken =
+          typeof lead?.orderToken === "string" && lead.orderToken
+            ? lead.orderToken
+            : null;
+        if (!newOrderToken) {
+          throw new Error(
+            "We couldn't save your application. Please try again or contact support."
+          );
         }
-        throw new Error(serverMessage);
+        setOrderToken(newOrderToken);
+
+        if (lead?.blocked) {
+          setLeadOnlyMessage(
+            String(
+              lead?.message ||
+                "Your application is saved. No payment was taken. Our team will contact you about the required medical documentation."
+            )
+          );
+          setSuccess(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
       }
 
-      const lead = await res.json();
-      const newContactId: string | null =
-        typeof lead?.contactId === "string" && lead.contactId ? lead.contactId : null;
-      const opportunityId: string | undefined =
-        typeof lead?.opportunityId === "string" ? lead.opportunityId : undefined;
-
-      if (!newContactId) {
-        throw new Error(
-          "We couldn't save your application. Please try again or contact support."
-        );
-      }
-      setContactId(newContactId);
+      if (!newOrderToken) throw new Error("Invalid order session.");
 
       // Phase 2 — If the buyer chose "upload now", push the files to the contact
       // BEFORE creating checkout, because the $250+ gate verifies docs exist on
-      // the contact server-side. Errors are swallowed inside uploadOne; a missing
-      // doc simply routes a gated order into the no-charge follow-up path.
-      let uploadedAny = false;
+      // the contact server-side. A failed upload is never counted as proof and
+      // therefore cannot unlock a $250+ Stripe Checkout session.
+      let confirmedUploadReceipt =
+        orderToken === newOrderToken ? uploadReceipt : null;
+      if (orderToken !== newOrderToken) setUploadReceipt(null);
       if (form.docUploadChoice === "now") {
         const pending = uploadedDocs
           .map((doc, idx) => ({ doc, idx }))
           .filter(({ doc }) => doc.status === "ready" || doc.status === "error");
         if (pending.length > 0) {
-          await Promise.all(
-            pending.map(({ doc, idx }) => uploadOne(doc.file, idx, newContactId))
+          const results = await Promise.all(
+            pending.map(({ doc, idx }) =>
+              uploadOne(doc.file, idx, newOrderToken)
+            )
+          );
+          confirmedUploadReceipt =
+            results.find((receipt): receipt is string => Boolean(receipt)) ||
+            confirmedUploadReceipt;
+        }
+        if (!confirmedUploadReceipt && requiresDocs) {
+          throw new Error(
+            "Your application is saved, but no document upload was confirmed. Retry the file shown below; no payment was taken."
           );
         }
-        uploadedAny = uploadedDocs.length > 0;
+        if (!confirmedUploadReceipt && !requiresDocs) {
+          setUploadWarning(
+            "No optional document upload was confirmed. Your $225 order will continue securely as Paid - No Docs, and the team can request documentation later."
+          );
+        }
       }
 
       // Phase 3 — Create the gated hosted checkout session. If docs are required
       // but missing, the server returns { blocked: true } and we show the
       // no-charge follow-up message instead of redirecting to payment.
-      const coRes = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contactId: newContactId,
-          opportunityId,
-          stateSlug,
-          docsUploaded: uploadedAny,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          phone: form.phone,
-          dateOfBirth: form.dateOfBirth,
-        }),
-      });
+      let coRes: Response | null = null;
+      let co: Record<string, unknown> = {};
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        coRes = await fetch("/api/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderToken: newOrderToken,
+            uploadReceipt: confirmedUploadReceipt || undefined,
+          }),
+        });
+        co = (await coRes.json().catch(() => ({}))) as Record<string, unknown>;
+        if (coRes.status !== 202 || co.retryable !== true) break;
+        if (attempt === 3) {
+          throw new Error(
+            String(
+              co.message ||
+                "Your document is saved but still being confirmed. Please wait a moment and try payment again."
+            )
+          );
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, (attempt + 1) * 1_000)
+        );
+      }
 
-      const co = await coRes.json().catch(() => ({}));
+      if (!coRes) {
+        throw new Error("We couldn't start secure payment. Please try again.");
+      }
 
       if (!coRes.ok) {
         throw new Error(
@@ -423,12 +504,12 @@ export function BookingForm({
         );
       }
 
-      if (co?.blocked) {
+      if (co.blocked) {
         // $250+ submitted without docs — lead saved, no payment taken.
         setLeadOnlyMessage(
           String(
-            co?.message ||
-              "Your application is saved. We can only process payment once we receive your medical documentation — check your email for instructions."
+            co.message ||
+                "Your application is saved. No payment was taken. Our team will contact you about secure document submission and next steps."
           )
         );
         setSuccess(true);
@@ -436,7 +517,7 @@ export function BookingForm({
         return;
       }
 
-      if (typeof co?.checkoutUrl !== "string" || !co.checkoutUrl) {
+      if (typeof co.checkoutUrl !== "string" || !co.checkoutUrl) {
         throw new Error(
           "We couldn't start secure payment. Please try again or contact support."
         );
@@ -445,10 +526,9 @@ export function BookingForm({
       setCheckoutUrl(co.checkoutUrl);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      // Hand off to the secure hosted payment page (Stripe or Clover).
+      // Hand off to Stripe's secure hosted payment page.
       window.location.href = co.checkoutUrl;
     } catch (err) {
-      console.error("[booking-form] submit failed:", err);
       const msg =
         err instanceof Error
           ? err.message
@@ -476,9 +556,10 @@ export function BookingForm({
           <p className="mt-3 text-foreground">{leadOnlyMessage}</p>
           <div className="mt-6 rounded-lg border border-border bg-card p-4 text-left text-sm text-muted-foreground">
             <strong className="text-foreground">No payment was taken.</strong>{" "}
-            We&apos;ll email <strong>{form.email}</strong> with instructions to
-            send your medical documentation. Once we receive it, we&apos;ll
-            process your {fullPrice} payment and issue your exemption.
+            Our team will use the contact information you provided to explain
+            secure document submission and next steps. Payment can be requested
+            only after the required upload is confirmed; provider review does
+            not guarantee approval or issuance.
           </div>
         </div>
       );
@@ -528,7 +609,8 @@ export function BookingForm({
             )}
             {allUploadsDone && (
               <p className="mt-1 text-xs text-green-400">
-                All documents securely attached to your patient record.
+                All documents securely attached to your access-controlled
+                application record.
               </p>
             )}
             <div className="mt-3 space-y-2">
@@ -580,17 +662,9 @@ export function BookingForm({
             </div>
             {hasUploadError && (
               <p className="mt-3 text-xs text-red-700">
-                Some files didn&apos;t upload. Click <strong>Retry</strong> to
-                try again, or email them to{" "}
-                <a
-                  href={`mailto:${legal.contactEmail}`}
-                  className="font-semibold underline"
-                >
-                  {legal.contactEmail}
-                </a>{" "}
-                and reference your name and email ({form.email}). Your payment is
-                already secure — we just need the documents to process your
-                exemption.
+                Some files didn&apos;t upload. Click <strong>Retry</strong>. If the
+                problem continues, contact MyEyeRx for a secure-upload option.
+                Do not send medical records through ordinary email or chat.
               </p>
             )}
           </div>
@@ -599,9 +673,9 @@ export function BookingForm({
         {form.docUploadChoice === "later" && (
           <div className="mt-6 rounded-lg border border-secondary/30 bg-secondary/10 p-4 text-left">
             <p className="text-sm text-foreground">
-              <strong>Next step:</strong> we&apos;ll email you shortly with
-              instructions to upload your medical documentation. Your exemption
-              cannot be issued until those documents are received.
+              <strong>Next step:</strong> MyEyeRx will contact you with a secure
+              upload option. Do not send records through ordinary email. An
+              independent clinician makes all clinical decisions after review.
             </p>
           </div>
         )}
@@ -621,9 +695,13 @@ export function BookingForm({
       <div className="mb-8">
         <div className="flex items-center justify-between">
           {[
-            { num: 1, label: "Prequalification", Icon: Stethoscope },
+            { num: 1, label: "Initial Screen", Icon: Stethoscope },
             { num: 2, label: "Documentation", Icon: Shield },
-            { num: 3, label: "Payment", Icon: CreditCard },
+            {
+              num: 3,
+              label: isLeadOnlyPath ? "Application" : "Payment",
+              Icon: isLeadOnlyPath ? FileText : CreditCard,
+            },
           ].map((s, i) => (
             <div key={s.num} className="flex flex-1 items-center">
               <div className="flex flex-col items-center">
@@ -660,16 +738,17 @@ export function BookingForm({
         </div>
       </div>
 
-      {/* STEP 1 — Prequalification */}
+      {/* STEP 1 — preliminary screening only */}
       {step === 1 && (
         <div className={cardClass}>
           <div className="mb-6">
             <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-              Medical Prequalification
+              Initial Eligibility Screening
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Answer the questions below to see if you prequalify for a{" "}
-              {stateName} window tint medical exemption.
+              Answer the questions below to see whether you can continue to a
+              provider review for a {stateName} window tint medical exemption.
+              This screen is not a diagnosis or approval.
             </p>
           </div>
 
@@ -863,50 +942,53 @@ export function BookingForm({
       {/* STEP 2 — Documentation Check */}
       {step === 2 && (
         <div className={cardClass}>
-          {/* Pre-Approved Banner */}
+          {/* Initial screening result — never a clinical approval. */}
           <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-5 text-center">
             <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
             <h2 className="mt-3 text-xl font-bold text-green-700 sm:text-2xl">
-              You Are Pre-Approved!
+              You May Qualify
             </h2>
             <p className="mt-2 text-sm text-green-800">
-              Based on your responses, you prequalify for a {stateName} window
-              tint medical exemption. Please read the documentation requirements
-              below carefully before proceeding.
+              Based on your screening responses, you may continue to a provider
+              review for a {stateName} window tint medical exemption. This is not
+              a diagnosis or approval. Please review the documentation process
+              before proceeding.
             </p>
           </div>
 
-          {/* IMPORTANT WARNING */}
+          {/* Documentation and review notice */}
           <div className="mb-6 rounded-lg border-2 border-red-500/40 bg-red-500/10 p-5">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-500" />
               <div>
                 <h3 className="text-base font-bold text-red-700">
-                  Important: Read Before Paying
+                  Documentation and Review Process
                 </h3>
                 <ul className="mt-2 space-y-2 text-sm text-red-800">
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
-                      If you purchase this service{" "}
-                      <strong>without having proper medical documentation</strong>
-                      , your application <strong>will be denied</strong>.
+                      Selecting a condition only means you may continue to an
+                      independent provider review. It does not guarantee clinical
+                      approval or an exemption.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
-                      It is <strong>your responsibility</strong> to have
-                      legitimate medical records, a doctor&apos;s note, or
-                      specialist documentation that confirms your qualifying
-                      condition.
+                      Useful documentation generally shows your name, the treating
+                      professional or facility, and the relevant condition,
+                      symptoms, treatment, or surgery. The reviewing provider may
+                      request more information.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
-                      <strong>All sales are final.</strong> No refunds will be
-                      issued if you fail to provide acceptable documentation.
+                      For orders priced at $250 or more, MyEyeRx requires a secure
+                      document upload before payment as part of its review process.
+                      This threshold is an operational rule, not a statement of
+                      state law.
                     </span>
                   </li>
                 </ul>
@@ -923,11 +1005,10 @@ export function BookingForm({
                   Not sure if your paperwork qualifies?
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  <strong className="text-foreground">
-                    Call us BEFORE paying
-                  </strong>{" "}
-                  and we will verify your documentation is acceptable. This
-                  protects you from purchasing a service you cannot use.
+                  Call MyEyeRx with general questions before paying. The team can
+                  explain common document types and the secure-upload process;
+                  only the reviewing provider can determine whether documentation
+                  is sufficient. Do not email medical records.
                 </p>
               </div>
             </div>
@@ -936,10 +1017,10 @@ export function BookingForm({
           {/* Required Documentation List */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-foreground">
-              Required Documentation
+              Documentation That May Be Useful
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              You must provide the following document:
+              Requirements vary by state and reviewing provider. A common example:
             </p>
           </div>
 
@@ -970,7 +1051,8 @@ export function BookingForm({
             <p className="mt-1 text-sm text-muted-foreground">
               {requiresDocs ? (
                 <>
-                  Your state&apos;s exemption requires medical documentation.{" "}
+                  For orders priced at $250 or more, MyEyeRx&apos;s review process
+                  requires a secure document upload before payment.{" "}
                   <strong className="text-foreground">
                     Upload it now to complete payment
                   </strong>
@@ -981,7 +1063,7 @@ export function BookingForm({
                 <>
                   Uploading your documents now will{" "}
                   <strong className="text-foreground">
-                    expedite the process
+                    make the records available for review sooner
                   </strong>{" "}
                   of getting your exemption. You may also upload them later after
                   purchase.
@@ -1003,7 +1085,7 @@ export function BookingForm({
                 <div className="text-left">
                   <span className="block font-semibold">Upload Now</span>
                   <span className="block text-xs text-muted-foreground">
-                    Faster processing
+                    Submit with intake
                   </span>
                 </div>
               </button>
@@ -1037,12 +1119,12 @@ export function BookingForm({
                     Click to upload files
                   </span>
                   <span className="mt-1 text-xs text-muted-foreground">
-                    PDF, JPG, PNG, or HEIC up to 4MB each
+                    PDF, JPG, or PNG up to 4MB each
                   </span>
                   <input
                     type="file"
                     multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.heic"
+                    accept=".pdf,.jpg,.jpeg,.png"
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -1076,8 +1158,16 @@ export function BookingForm({
 
                 {uploadedDocs.length > 0 && (
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Files are securely uploaded to your patient record when you
-                    submit your application.
+                    Files are securely uploaded to your access-controlled
+                    application record when you submit your application.
+                  </p>
+                )}
+                {!requiresDocs && uploadedDocs.length === 0 && (
+                  <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                    No optional document is selected. You can still continue to
+                    the secure $225 checkout; this application will be recorded
+                    without documents, and clinician review will wait until the
+                    team receives them.
                   </p>
                 )}
               </div>
@@ -1088,16 +1178,16 @@ export function BookingForm({
                 <p className="text-sm text-foreground">
                   {requiresDocs ? (
                     <>
-                      We&apos;ll save your application and email{" "}
-                      instructions to send your documentation.{" "}
+                      We&apos;ll save your application and contact you with a secure
+                      upload option. Do not send records by ordinary email.{" "}
                       <strong>
                         No payment is taken until your documents are received.
                       </strong>
                     </>
                   ) : (
                     <>
-                      You will receive an email after purchase with instructions
-                      on how to upload your documentation.{" "}
+                      You will receive follow-up instructions for secure document
+                      upload after purchase. Do not reply with medical records.{" "}
                       <strong>
                         Your exemption cannot be processed until documentation is
                         received.
@@ -1109,22 +1199,24 @@ export function BookingForm({
             )}
           </div>
 
-          {/* No Refund Agreement */}
+          {/* Documentation acknowledgement */}
           <div className="mt-6">
             <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-red-500/30 bg-red-500/10 p-4 hover:bg-red-500/15">
               <input
                 type="checkbox"
-                checked={form.agreesNoRefund}
-                onChange={(e) => updateField("agreesNoRefund", e.target.checked)}
+                checked={form.acknowledgesDocumentation}
+                onChange={(e) =>
+                  updateField("acknowledgesDocumentation", e.target.checked)
+                }
                 className="mt-0.5 h-5 w-5 shrink-0 rounded border-red-400 text-red-500 focus:ring-red-500"
               />
               <span className="text-sm text-red-800">
-                <strong className="text-red-700">I understand and agree:</strong>{" "}
-                If I purchase this service without having legitimate medical
-                documentation to support my condition, my application will be
-                denied and <strong>no refund will be issued</strong>. It is my
-                responsibility to ensure I have proper paperwork. If I am unsure
-                whether my documentation qualifies, I will call before paying.
+                <strong className="text-red-700">I acknowledge:</strong>{" "}
+                Selecting a condition does not guarantee qualification or approval.
+                An independent licensed provider will review my application and may
+                request more information. I will submit records only through the
+                secure uploader. For a $250-or-more order, payment cannot begin
+                until the system confirms a document upload.
               </span>
             </label>
           </div>
@@ -1142,7 +1234,7 @@ export function BookingForm({
               type="button"
               onClick={handleStep2Submit}
               disabled={
-                !form.agreesNoRefund ||
+                !form.acknowledgesDocumentation ||
                 !form.docUploadChoice ||
                 (requiresDocs &&
                   form.docUploadChoice === "now" &&
@@ -1162,16 +1254,25 @@ export function BookingForm({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
             <div className={cardClass}>
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                Patient Information &amp; Payment
+                {isLeadOnlyPath
+                  ? "Patient Information & Application"
+                  : "Patient Information & Payment"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                All information is kept confidential and HIPAA compliant.
+                Your information is handled according to our Privacy Policy.
               </p>
 
               {error && (
                 <div className="mt-4 flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                   <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                   <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              {uploadWarning && (
+                <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                  <p className="text-sm text-amber-800">{uploadWarning}</p>
                 </div>
               )}
 
@@ -1264,6 +1365,69 @@ export function BookingForm({
                     onChange={(e) => updateField("dateOfBirth", e.target.value)}
                     className={inputClass}
                   />
+                </div>
+
+                {/* Residential address — stored in GHL standard contact fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="addressLine1" className="block text-sm font-medium text-foreground">
+                      Street Address *
+                    </label>
+                    <input
+                      type="text"
+                      id="addressLine1"
+                      autoComplete="street-address"
+                      required
+                      value={form.addressLine1}
+                      onChange={(event) => updateField("addressLine1", event.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="addressLine2" className="block text-sm font-medium text-foreground">
+                      Apartment, Suite, or Unit
+                    </label>
+                    <input
+                      type="text"
+                      id="addressLine2"
+                      autoComplete="address-line2"
+                      value={form.addressLine2}
+                      onChange={(event) => updateField("addressLine2", event.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-foreground">
+                        City *
+                      </label>
+                      <input
+                        type="text"
+                        id="city"
+                        autoComplete="address-level2"
+                        required
+                        value={form.city}
+                        onChange={(event) => updateField("city", event.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="postalCode" className="block text-sm font-medium text-foreground">
+                        ZIP Code *
+                      </label>
+                      <input
+                        type="text"
+                        id="postalCode"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        pattern="[0-9]{5}(-[0-9]{4})?"
+                        required
+                        value={form.postalCode}
+                        onChange={(event) => updateField("postalCode", event.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* State (read-only) + Time Zone */}
@@ -1382,34 +1546,52 @@ export function BookingForm({
                   </div>
                 </div>
 
-                {/* Payment Section — collected on Clover's hosted page. After
-                    submit, the buyer is redirected to Clover's secure checkout
-                    to enter their card (which records their name). */}
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    Secure Payment — {displayPrice}
+                {/* Payment is collected only on allowed paths at Stripe. */}
+                {isLeadOnlyPath ? (
+                  <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <FileText className="h-4 w-4 text-secondary" />
+                      Application Saved — No Payment Today
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Submit this application without payment. MyEyeRx will contact
+                      you with a secure document-upload option. Stripe checkout cannot
+                      begin until this application has a confirmed document upload.
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    After you submit your application, you&apos;ll be taken to our
-                    secure payment processor to complete your {displayPrice}{" "}
-                    payment securely. Your card details are entered on
-                    an encrypted page and never touch our servers.
-                  </p>
-                </div>
+                ) : (
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      Secure Payment — {displayPrice}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      After you submit your application, you&apos;ll be taken to our
+                      secure payment processor to complete your {displayPrice}{" "}
+                      payment securely. Your card details are entered on
+                      an encrypted page and never touch our servers.
+                    </p>
+                  </div>
+                )}
 
                 {/* Co-branding + privacy notice so the MyEyeRx receipt is never a surprise */}
                 <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <p className="text-xs text-muted-foreground">
-                    For your privacy, your card statement and emailed receipt
-                    will appear as{" "}
-                    <strong className="text-foreground">
-                      {legal.providerName}
-                    </strong>{" "}
-                    — never your medical condition. Your payment is secured with
-                    256-bit encryption and your card is never stored on our
-                    servers.
+                    {isLeadOnlyPath ? (
+                      <>
+                        No card information is requested today. {" "}
+                        <strong className="text-foreground">{legal.providerName}</strong>{" "}
+                        coordinates secure document follow-up before any payment step.
+                      </>
+                    ) : (
+                      <>
+                        Payment takes place on Stripe&apos;s hosted checkout page. Stripe
+                        handles the card details; this site does not receive or store
+                        them. <strong className="text-foreground">{legal.providerName}</strong>{" "}
+                        coordinates the service and follow-up.
+                      </>
+                    )}
                   </p>
                 </div>
 
@@ -1447,18 +1629,35 @@ export function BookingForm({
                     />
                     <span className="text-muted-foreground">
                       I agree to the{" "}
-                      <a href="/privacy-policy" className="text-primary underline">
+                      <Link href="/privacy-policy" className="text-primary underline">
                         Privacy Policy
-                      </a>{" "}
+                      </Link>{" "}
                       and{" "}
-                      <a href="/refund-policy" className="text-primary underline">
+                      <Link href="/refund-policy" className="text-primary underline">
                         Refund Policy
-                      </a>
+                      </Link>
                       . By providing my phone number and email, I agree to
                       receive communications regarding my application.
                     </span>
                   </label>
                 </div>
+
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={(event) => updateField("website", event.target.value)}
+                  />
+                </div>
+                <TurnstileWidget
+                  onToken={setBotToken}
+                  resetKey={turnstileResetKey}
+                />
 
                 {/* Actions */}
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -1472,7 +1671,14 @@ export function BookingForm({
                   <button
                     type="submit"
                     disabled={
-                      loading || !form.agreeToTerms || !form.agreesToLiability || !form.dateOfBirth
+                      loading ||
+                      !form.agreeToTerms ||
+                      !form.agreesToLiability ||
+                      !form.dateOfBirth ||
+                      !form.addressLine1 ||
+                      !form.city ||
+                      !form.postalCode ||
+                      (TURNSTILE_ENABLED && !botToken)
                     }
                     className="order-1 flex flex-1 items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:order-2"
                   >
@@ -1483,7 +1689,7 @@ export function BookingForm({
                       </>
                     ) : (
                       <>
-                        {requiresDocs && form.docUploadChoice !== "now"
+                        {isLeadOnlyPath
                           ? "Submit Application"
                           : "Submit & Continue to Payment"}{" "}
                         <ArrowRight className="ml-2 h-5 w-5" />
@@ -1493,8 +1699,9 @@ export function BookingForm({
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground">
-                  Payments processed securely. Your data is encrypted and HIPAA
-                  compliant.
+                  {isLeadOnlyPath
+                    ? "No payment is requested today. Our team will contact you about secure document submission."
+                    : "Payment is processed securely by Stripe. Card details never pass through our servers."}
                 </p>
               </div>
             </div>
@@ -1503,47 +1710,46 @@ export function BookingForm({
             <div className="space-y-5">
               <div className="rounded-xl border border-border bg-card p-5">
                 <h3 className="text-base font-bold text-foreground">
-                  Order Summary
+                  {isLeadOnlyPath ? "Application Summary" : "Order Summary"}
                 </h3>
-                {IS_TEST_MODE && (
-                  <div className="mt-3 rounded-md border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
-                    <strong>Test Mode:</strong> your card will be charged{" "}
-                    {TEST_MODE_PRICE} instead of {fullPrice}. All other logic is
-                    live (real charge, real GHL contact).
-                  </div>
-                )}
-                {requiresDocs && form.docUploadChoice !== "now" && (
+                {isLeadOnlyPath && (
                   <div className="mt-3 rounded-md border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
                     <strong>No payment today.</strong> Submit your application
-                    and we&apos;ll collect your documents first. You&apos;ll only
-                    be charged {fullPrice} once they&apos;re received.
+                    and we&apos;ll collect your documents first. No payment can begin
+                    until a secure upload is confirmed.
                   </div>
                 )}
                 <div className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
-                      Medical Consultation
+                      {isLeadOnlyPath
+                        ? "Application submission today"
+                        : "Intake Review and Coordination"}
                     </span>
                     <span className="font-medium text-foreground">
-                      {displayPrice}
+                      {isLeadOnlyPath ? "$0" : displayPrice}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Documentation Review
+                      Secure Document Submission
                     </span>
                     <span className="font-medium text-green-400">Included</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Exemption Certificate
+                      Application Status Support
                     </span>
                     <span className="font-medium text-green-400">Included</span>
                   </div>
                   <div className="border-t border-border pt-2">
                     <div className="flex justify-between font-bold">
-                      <span className="text-foreground">Total</span>
-                      <span className="text-primary">{displayPrice}</span>
+                      <span className="text-foreground">
+                        {isLeadOnlyPath ? "Total Due Today" : "Total"}
+                      </span>
+                      <span className="text-primary">
+                        {isLeadOnlyPath ? "$0" : displayPrice}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1571,12 +1777,11 @@ export function BookingForm({
                 </h3>
                 <ul className="mt-3 space-y-2">
                   {[
-                    "Licensed physician consultation",
-                    "Medical condition assessment",
-                    "Official exemption certificate",
-                    "Digital delivery (instant)",
-                    "Valid for vehicle registration",
-                    "Customer support",
+                    "Online intake and preliminary screening",
+                    "Coordination through MyEyeRx",
+                    "Secure document submission",
+                    "Application status support",
+                    "Independent licensed clinician makes clinical decisions",
                   ].map((item) => (
                     <li
                       key={item}

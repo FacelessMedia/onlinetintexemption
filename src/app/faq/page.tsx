@@ -5,41 +5,42 @@ import { ChevronRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
-    "Everything you need to know about getting your medical tint exemption. Common questions answered.",
+    "General answers about medical window tint intake, documents, payment routing, MyEyeRx coordination, and independent clinical review.",
+  alternates: { canonical: "https://www.onlinetintexemption.com/faq" },
 };
 
 const faqItems = [
   {
     q: "What medical conditions qualify for a tint exemption?",
-    a: "Common qualifying conditions include lupus, photosensitivity, melanoma/skin cancer history, migraines, albinism, cataracts, macular degeneration, and various eye conditions that cause light sensitivity. During your consultation, our licensed physician will evaluate your specific condition to determine if you qualify.",
+    a: "Requirements vary by state and individual circumstances. Selecting a condition means only that you may continue the initial screening. An independent licensed clinician makes the final clinical decision and may request more information.",
   },
   {
     q: "How long does the process take?",
-    a: "Most customers receive their medical tint exemption certificate within 24-48 hours of completing their phone consultation. The initial intake form takes about 5 minutes, and the phone consultation is typically 10-15 minutes.",
+    a: "Timing depends on document completeness, provider availability, and state-specific requirements. MyEyeRx will contact you if more information is needed. No approval or delivery time is guaranteed.",
   },
   {
     q: "Do I need to visit a doctor in person?",
-    a: "No. The entire process is done remotely. You'll complete an online intake form and then have a brief phone consultation with a licensed physician. There's no need to leave your home.",
+    a: "The intake begins online. The reviewing provider determines the appropriate consultation format and whether additional records, follow-up, or in-person care are needed.",
   },
   {
     q: "What if I don't qualify?",
-    a: "We offer a 100% money-back guarantee. If our physician determines that you don't qualify for a medical tint exemption based on your condition, you'll receive a full refund. No questions asked.",
+    a: "Qualification is not guaranteed. Review the current Refund Policy before paying or call MyEyeRx at 734-338-9453 for help understanding how the policy applies.",
   },
   {
     q: "Is a medical tint exemption legal?",
-    a: "Yes, medical exemptions for window tinting are legal in most states when properly documented by a licensed physician. Your exemption certificate serves as legal proof of your medical need and is accepted by law enforcement.",
+    a: "Many jurisdictions provide a medical-exemption process, but forms, tint limits, filing steps, and enforcement treatment vary. Confirm current rules with the relevant state authority. We do not provide legal advice or guarantee agency acceptance.",
   },
   {
     q: "How dark can I tint my windows?",
-    a: "The allowed tint level varies by state and depends on your specific medical condition. Your physician will specify the appropriate darkness level on your exemption certificate based on your medical needs and state regulations.",
+    a: "Do not assume an exemption allows any particular tint percentage or window. Follow the reviewing clinician's documentation and current instructions from the relevant state authority.",
   },
   {
     q: "Do I need to register with the DMV?",
-    a: "This depends on your state. Some states require DMV registration, while others only require you to carry the prescription in your vehicle. We'll provide detailed instructions for your specific state's requirements.",
+    a: "This depends on the state and can change. Follow the current instructions from the relevant agency. MyEyeRx can help coordinate administrative next steps after review.",
   },
   {
     q: "Is my information secure?",
-    a: "Absolutely. We use bank-level encryption to protect your personal and medical information. Your data is never shared with third parties and all consultations are completely confidential.",
+    a: "The intake uses access controls, file validation, rate limits, and Stripe-hosted card entry. Information is handled and shared as described in the Privacy Policy. No online service can promise absolute security.",
   },
 ];
 
@@ -54,7 +55,7 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Everything you need to know about getting your medical tint exemption
+              General answers about intake, documents, payment, and review
             </p>
           </div>
         </div>
@@ -112,15 +113,15 @@ export default function FAQPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-foreground">Ready to Get Started?</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of satisfied customers who got their tint exemption
-            through Online Tint Exemption.
+            Review your state&apos;s guidance and begin the preliminary intake. This
+            is not a diagnosis or promise of approval.
           </p>
           <div className="mt-8">
             <Link
               href="/book"
               className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Get Your Exemption Now
+              Start Secure Intake
               <ChevronRight className="ml-2 h-5 w-5" />
             </Link>
           </div>

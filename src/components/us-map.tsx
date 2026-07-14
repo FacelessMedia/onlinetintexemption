@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAllStates } from "@/data/states";
 import {
@@ -36,9 +36,9 @@ export function USMap() {
     allStates.map((s) => [s.abbreviation, s])
   );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     setTooltipPos({ x: e.clientX, y: e.clientY });
-  }, []);
+  };
 
   const hoveredState = hovered ? stateByAbbr[hovered] : null;
 
@@ -81,8 +81,6 @@ export function USMap() {
               const stateName = geo.properties.name;
               const abbr = stateNameToAbbr[stateName];
               const state = abbr ? stateByAbbr[abbr] : null;
-              const isHovered = hovered === abbr;
-
               const baseColor = getStateColor(state);
 
               return (

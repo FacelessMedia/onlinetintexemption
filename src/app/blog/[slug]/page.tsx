@@ -37,6 +37,10 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) notFound();
 
   const url = `https://www.onlinetintexemption.com/blog/${post.slug}`;
+  const isNamedAuthor =
+    post.author === "Toriano Dewberry" &&
+    post.authorSlug === "toriano-dewberry";
+  const authorHref = isNamedAuthor ? "/about/toriano-dewberry" : "/about";
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -44,7 +48,17 @@ export default async function BlogPostPage({ params }: PageProps) {
     description: post.metaDescription || post.excerpt,
     ...(post.datePublished ? { datePublished: post.datePublished } : {}),
     ...(post.dateModified || post.datePublished ? { dateModified: post.dateModified || post.datePublished } : {}),
-    author: { "@type": "Organization", name: "Online Tint Exemption", url: "https://www.onlinetintexemption.com" },
+    author: isNamedAuthor
+      ? {
+          "@type": "Person",
+          name: "Toriano Dewberry",
+          url: "https://www.onlinetintexemption.com/about/toriano-dewberry",
+        }
+      : {
+          "@type": "Organization",
+          name: "Online Tint Exemption Editorial Team",
+          url: "https://www.onlinetintexemption.com/about",
+        },
     publisher: { "@type": "Organization", name: "Online Tint Exemption", url: "https://www.onlinetintexemption.com" },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     inLanguage: "en-US",
@@ -89,7 +103,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <Link
-                href={`/about/${post.authorSlug}`}
+                href={authorHref}
                 className="flex items-center gap-1.5 hover:text-primary transition-colors"
               >
                 <User className="h-4 w-4" />
@@ -127,6 +141,14 @@ export default async function BlogPostPage({ params }: PageProps) {
             )}
           </div>
 
+          <aside className="mt-8 rounded-xl border border-amber-300/60 bg-amber-50 p-5 text-sm leading-relaxed text-amber-950 dark:bg-amber-950/20 dark:text-amber-100">
+            This article is general education, not medical or legal advice. Laws,
+            agency forms, and documentation rules can change. Confirm current
+            requirements with the relevant state authority, and rely on an
+            independent licensed clinician for medical decisions. Reading this
+            page or completing an intake does not guarantee an exemption.
+          </aside>
+
           {/* FAQ */}
           {post.faqs && post.faqs.length > 0 && (
             <section className="mt-12">
@@ -151,13 +173,15 @@ export default async function BlogPostPage({ params }: PageProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Written by</p>
                 <Link
-                  href={`/about/${post.authorSlug}`}
+                  href={authorHref}
                   className="text-lg font-semibold text-card-foreground hover:text-primary transition-colors"
                 >
                   {post.author}
                 </Link>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Licensed optician and founder of Online Tint Exemption.
+                  {isNamedAuthor
+                    ? "Licensed optician and founder of Online Tint Exemption. Toriano is not presented as the clinician reviewing an application."
+                    : "Educational content prepared by the Online Tint Exemption editorial team and reviewed for clear sourcing and consumer disclosures."}
                 </p>
               </div>
             </div>

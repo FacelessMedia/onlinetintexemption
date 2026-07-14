@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Clock } from "lucide-react";
-import { blogPosts, blogCategories, getFeaturedPosts } from "@/data/blog";
+import { blogCategories, getFeaturedPosts, publishedBlogPosts } from "@/data/blog";
 
 export const metadata: Metadata = {
   title: "Light Sensitivity Blog | Tips & Resources",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function BlogHub() {
   const featured = getFeaturedPosts();
-  const latest = blogPosts;
+  const latest = publishedBlogPosts();
 
   return (
     <>
@@ -23,7 +23,7 @@ export default function BlogHub() {
               Tips for Living with Light Sensitivity
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Expert advice, practical tips, and resources for managing
+              Educational guidance, practical tips, and resources for managing
               photophobia and light-sensitive conditions in your daily life.
             </p>
           </div>

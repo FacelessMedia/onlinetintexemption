@@ -21,9 +21,6 @@ export const legal = {
   // Effective date shown on the legal documents. Update when content changes.
   effectiveDate: "2026-06-02",
 
-  // Compliance posture (confirmed by the business: GHL HIPAA plan active,
-  // BAAs signed, attorney sign-off complete).
-  hipaaCompliant: true,
 } as const;
 
 export type Legal = typeof legal;

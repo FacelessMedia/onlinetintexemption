@@ -44,6 +44,87 @@ export interface StateData {
   }[];
 }
 
+function stateHeroTitle(stateName: string): string {
+  return `${stateName} Medical Window Tint Information`;
+}
+
+function stateHeroDescription(stateName: string): string {
+  return `Review an educational summary of ${stateName} window-tint rules, documentation considerations, and the intake process coordinated through MyEyeRx. Verify current requirements with the responsible state agency before changing a vehicle.`;
+}
+
+function buildRelevantConditions(): StateData["qualifyingConditions"] {
+  return [
+    { name: "Photosensitivity or Photophobia", description: "Documented light-related symptoms may be relevant to a clinician's individualized review. The symptom alone does not establish state eligibility." },
+    { name: "Autoimmune Conditions", description: "Some autoimmune conditions can involve light sensitivity. A reviewing clinician must consider the applicant's own history and supporting records." },
+    { name: "Eye or Neurologic Conditions", description: "Certain eye or neurologic conditions may involve glare or light sensitivity. Only a qualified clinician can assess the individual's situation." },
+    { name: "Skin or Photosensitive Conditions", description: "Some skin conditions or treatments may be affected by light exposure. State standards and accepted documentation vary." },
+    { name: "Surgery or Treatment-Related Concerns", description: "Recent surgery, treatment, or medication effects may be relevant when supported by a record from the treating clinician or facility." },
+  ];
+}
+
+function stateOverview(stateName: string): string {
+  return `Window-tint rules and medical-documentation procedures vary by state and can change. This page gives a general overview for ${stateName}; it is not legal or medical advice and is not an official state publication. A medical condition or supporting record may be relevant to an independent clinician's review, but it does not by itself establish eligibility or authorize a particular tint. Confirm the current rule, form, vehicle requirements, and filing process with the responsible ${stateName} agency before relying on this summary.`;
+}
+
+function stateExemptionExplanation(stateName: string, allowsMedicalExemption = true): string {
+  return allowsMedicalExemption
+    ? `Where ${stateName} provides a medical window-tint exception or exemption process, the state decides what documentation it accepts and what vehicle-specific limits still apply. MyEyeRx coordinates intake and referral to an independent licensed clinician; the clinician makes the clinical decision, and any state agency or law-enforcement authority makes its own acceptance and enforcement decisions. Review, payment, or possession of medical documentation is not a guarantee of approval, a certificate, agency acceptance, or protection from a citation.`
+    : `Our current service table does not list an available medical window-tint pathway for ${stateName}. Because rules and agency interpretations can change, verify that status directly with the responsible state agency or a qualified local attorney. A clinician's note does not independently change vehicle-equipment law or guarantee that an agency or officer will accept it.`;
+}
+
+function buildStateSteps(stateName: string, allowsMedicalExemption = true): StateData["howToSteps"] {
+  if (!allowsMedicalExemption) {
+    return [
+      { title: "Verify the Current State Rule", description: `Check the responsible ${stateName} agency's current statute, regulation, forms, and vehicle requirements. This website is not an official source.` },
+      { title: "Discuss Light Sensitivity With Your Existing Clinician", description: "Seek individualized medical guidance about symptoms and protective options. A medical record does not itself authorize noncompliant tint." },
+      { title: "Use Only Lawful Alternatives", description: "Before installing any product, confirm that it complies with the current rule. A local attorney or the responsible agency can address legal questions." },
+    ];
+  }
+
+  return [
+    { title: "Verify the Current State Requirements", description: `Check the responsible ${stateName} agency for the current rule, accepted professional credentials, required form, vehicle restrictions, filing method, and renewal requirements.` },
+    { title: "Gather Relevant Supporting Records", description: "Useful records commonly identify the applicant, the treating clinician or facility, and the relevant condition, symptoms, surgery, or treatment. A brief letter on facility letterhead may help document prior surgery. Do not send medical records through ordinary email or chat." },
+    { title: "Complete the Secure Intake", description: "Answer every required screening question accurately. MyEyeRx coordinates the referral, but an independent licensed clinician decides whether the submitted information supports any medical documentation." },
+    { title: "Follow the State and Vehicle Process", description: `If documentation is issued, independently confirm the next steps with the responsible ${stateName} agency before changing tint. Approval, agency acceptance, permitted darkness, carrying rules, and renewal are not guaranteed by this service.` },
+  ];
+}
+
+function enforcementGuidance(stateName: string): string {
+  return `If you are stopped or cited in ${stateName}, remain respectful and follow lawful instructions. Keep any current records accessible and provide them only when appropriate, but do not assume they eliminate a citation or establish a legal defense. This site cannot advise you about roadside rights, court procedure, or a specific ticket; contact the issuing authority or a qualified local attorney for guidance.`;
+}
+
+function buildStateCommonMistakes(stateName: string): StateData["commonMistakes"] {
+  return [
+    { title: "Relying on an Unofficial or Outdated Summary", description: `Confirm ${stateName}'s current rule and form with the responsible agency before paying, filing, or modifying a vehicle.` },
+    { title: "Assuming a Diagnosis Automatically Qualifies", description: "Eligibility depends on the current state standard and an individualized clinical review. A listed condition is not an approval promise." },
+    { title: "Submitting Incomplete or Unrelated Records", description: "Provide legible, relevant records that identify you and the treating clinician or facility. Missing information can require follow-up." },
+    { title: "Installing Tint Before Verifying Every Requirement", description: "Medical documentation does not by itself establish the permitted VLT, covered windows, vehicle registration, filing, or enforcement treatment." },
+    { title: "Sharing Medical Information Insecurely", description: "Use the secure upload in the intake. Do not place medical details in ordinary email, support chat, or public messages." },
+  ];
+}
+
+function buildStateFaq(
+  stateName: string,
+  price: number,
+  offered: boolean,
+  allowsMedicalExemption = true,
+): StateData["faq"] {
+  const serviceAnswer = offered
+    ? price >= 250
+      ? `The listed intake price is $${price}. For services priced at $250 or more, a relevant supporting document is required before checkout. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
+      : `The listed intake price is $${price}. Supporting documents are encouraged but are not required before checkout at this price. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
+    : `OnlineTintExemption is not currently accepting paid intake for ${stateName}. Contact the responsible state agency or a qualified local professional for current options.`;
+
+  return [
+    { question: `How do I know whether I qualify in ${stateName}?`, answer: allowsMedicalExemption ? `Check ${stateName}'s current official eligibility standard, then complete an individualized clinical review. A condition named on this site may be relevant, but no diagnosis automatically qualifies and no outcome is guaranteed.` : `Our current service table does not list an available medical window-tint pathway for ${stateName}. Verify the current rule directly with the responsible state agency because requirements can change.` },
+    { question: "What supporting documents may be useful?", answer: "In many cases, a record showing your name, the treating clinician or facility, and the relevant medical condition, symptoms, or treatment can support review. For a surgery-related issue, a brief letter on the facility's letterhead confirming treatment may be useful. Exact requirements vary; use the secure upload and contact support if you are unsure." },
+    { question: "What does the service cost and when are documents required?", answer: serviceAnswer },
+    { question: "How long does review take?", answer: "Timing depends on record completeness, follow-up needs, independent clinician availability, and any state process. No approval, issuance, delivery, or agency-processing time is guaranteed." },
+    { question: "Does medical documentation authorize any tint level or prevent a ticket?", answer: `No. Confirm ${stateName}'s current window, VLT, vehicle, filing, carrying, and renewal rules with the responsible agency. Medical documentation is not a promise of agency acceptance, law-enforcement treatment, or protection from a citation.` },
+    { question: "What if I am denied or the documentation is not accepted?", answer: "Clinical decisions and government acceptance are outside the site's control. Review the posted refund policy before purchase, and contact support about an order-specific issue. For legal questions or citations, contact the responsible authority or a qualified local attorney." },
+  ];
+}
+
 export const states: Record<string, StateData> = {
   ohio: {
     name: "Ohio",
@@ -53,8 +134,8 @@ export const states: Record<string, StateData> = {
     allowsMedicalExemption: true,
     price: 250,
     originalPrice: 350,
-    heroTitle: "Secure Your Medical Tint Exemption in Ohio Today",
-    heroDescription: "If you suffer from light sensitivity, navigating Ohio's roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
+    heroTitle: stateHeroTitle("Ohio"),
+    heroDescription: stateHeroDescription("Ohio"),
     tintLaws: {
       frontWindshield: "Non-reflective above AS-1 line",
       frontSideWindows: "50% VLT",
@@ -64,40 +145,14 @@ export const states: Record<string, StateData> = {
     ticketFine: "$120",
     dmvFiling: "Not Required",
     exemptionDuration: "Per physician recommendation",
-    qualifyingConditions: [
-      { name: "Lupus", description: "Lupus is an autoimmune disease that can cause severe skin sensitivity to sunlight. For individuals with lupus, exposure to bright light can trigger painful rashes and systemic flare-ups. Therefore, having darker window tints can significantly alleviate discomfort while driving." },
-      { name: "Photosensitivity", description: "Photosensitivity refers to an increased sensitivity to light, which can cause adverse reactions such as rashes, headaches, or even seizures. Those suffering from photosensitivity benefit greatly from darker tints that minimize light exposure during travel." },
-      { name: "Albinism", description: "Individuals with albinism often have little to no melanin in their skin, hair, and eyes, making them extremely sensitive to bright lights. They are at a higher risk of sunburn and vision problems, which makes darker window tints essential for safe driving." },
-      { name: "Eye Conditions", description: "Certain eye conditions, such as cataracts or macular degeneration, can lead to heightened sensitivity to light. Individuals with these conditions can find relief through the use of tinted windows, which help reduce glare and enhance visual comfort." },
-      { name: "Skin Conditions", description: "Skin conditions like polymorphic light eruption can cause painful rashes upon exposure to sunlight. For individuals with these skin conditions, obtaining a medical window tint exemption is crucial to ensure safe driving without triggering their symptoms." },
-    ],
-    understandingSection: "In Ohio, window tint exemptions are crucial for residents suffering from medical conditions that amplify light sensitivity. Ohio's diverse climate, with its sunny summers and stark winters, can exacerbate symptoms for individuals with conditions like lupus or albinism. The discomfort and potential health risks of exposure to bright sunlight can make driving a daunting task for these individuals. Ohio's window tint laws aim to balance safety and aesthetics, but they can pose a significant challenge for those with light sensitivity. The state's regulations permit certain levels of tinting, but for those who need more protection, obtaining a medical exemption is essential. By securing this exemption, individuals can ensure a safer driving experience, reducing glare and discomfort while navigating the roads. This page will guide you through the legal framework, the exemption process, and why it's vital for Ohio residents to pursue these exemptions.",
-    whatIsExemption: "A medical window tint exemption in Ohio allows individuals with specific medical conditions to have darker window tints than what is typically permitted by state law. Under Ohio law, the standard tint restrictions include a non-reflective front windshield above the AS-1 line, a maximum of 50% VLT on front side windows, and no restrictions on back side and rear windows. However, for those with qualifying medical conditions, these limits can be relaxed. To obtain an exemption, individuals must fill out a medical exemption form and have it signed by a licensed physician affirming their need for enhanced protection from sunlight. This exemption not only helps in creating a more comfortable driving environment but also protects individuals from receiving tickets related to non-compliance with standard tint laws.",
+    qualifyingConditions: buildRelevantConditions(),
+    understandingSection: stateOverview("Ohio"),
+    whatIsExemption: stateExemptionExplanation("Ohio"),
     tintLawsDescription: "Ohio's window tint laws are designed to ensure safety while allowing some degree of personal preference. In 2026, these laws stipulate specific limits on the amount of visible light transmitted through vehicle windows, aiming to enhance visibility for drivers and passengers alike.\n\nThe legal limits for tint in Ohio are as follows: front side windows must allow at least 50% of light (VLT), while back side and rear windows have no restrictions. VLT stands for Visible Light Transmission, which measures how much light passes through the window. This percentage is crucial, as too dark a tint can impair visibility and create safety hazards. Enforcement of these laws is primarily the responsibility of law enforcement officers who may issue citations for violations. Drivers found in violation may face fines, typically around $120, if they do not have an exemption.",
-    howToSteps: [
-      { title: "Consult Your Physician", description: "The first step in obtaining a medical exemption is to consult with your physician. It's essential to discuss your condition and how light sensitivity affects your daily life, especially when driving. Your physician will need to complete and sign the medical exemption form, providing documentation that supports your need for darker window tints." },
-      { title: "Complete the Medical Exemption Form", description: "Once your physician has evaluated your condition, you'll need to fill out the official medical exemption form. Ensure that all sections are completed accurately, including personal information and the specific medical condition that qualifies you for the exemption." },
-      { title: "Submit Your Application", description: "After completing the form, retain a copy for your records and keep the original signed copy in your vehicle. Although you do not need to file this form with the DMV, it is advisable to carry it whenever you are driving, as it serves as proof of your exemption." },
-      { title: "After Your Approval", description: "Once approved, the medical exemption allows you to legally tint your vehicle windows darker than the standard limits set by Ohio law. It's important to keep the signed exemption form in your car at all times, as this serves as your protection if you are stopped by law enforcement. The exemption does not require you to register it with the DMV, but having it accessible can help clarify any misunderstandings during a traffic stop." },
-    ],
-    pulledOverAdvice: "Being pulled over for window tint violations can be a stressful experience, especially if you have a medical exemption. If you find yourself in this situation, remain calm and respectful. When the officer approaches, inform them that you have a medical exemption for your window tint. Present the signed exemption form promptly. This document is crucial as it confirms your legal right to have darker tints due to medical conditions. Be prepared to explain your condition briefly, as this information can help the officer understand your situation. Know your rights as a driver in Ohio; you are not obligated to answer questions beyond basic identification. If the officer does not recognize your exemption, remain polite, and request to speak to a supervisor if necessary. It's important to keep a copy of your exemption form in your vehicle, as this can often resolve misunderstandings on the spot.",
-    commonMistakes: [
-      { title: "Not Consulting with a Qualified Physician", description: "One common mistake is failing to consult a qualified physician who understands your condition. It's essential that your physician is able to provide a proper diagnosis and complete the exemption form accurately." },
-      { title: "Incomplete Form Submission", description: "Submitting an incomplete medical exemption form can delay the process. Make sure all sections are filled in, and all necessary signatures are included before submitting." },
-      { title: "Neglecting to Keep Documentation in Vehicle", description: "After receiving your exemption, some individuals forget to keep a copy of it in their vehicle. It's crucial to have this documentation on hand to avoid fines during traffic stops." },
-      { title: "Ignoring the Legal Limits of Tint", description: "Even with an exemption, be aware that there are still legal limits on how dark your tint can be. Make sure your vehicle complies with these regulations to avoid additional penalties." },
-      { title: "Failing to Understand the Renewal Process", description: "Some individuals may not realize that medical exemptions can expire. Always check if your exemption needs renewal and understand the process to maintain compliance." },
-    ],
-    faq: [
-      { question: "How do I know if I qualify for a medical window tint exemption?", answer: "To determine if you qualify for a medical window tint exemption in Ohio, you need to have a medical condition that causes light sensitivity. Common qualifying conditions include lupus, photosensitivity, albinism, certain eye conditions, and skin conditions. Consult your physician to discuss your symptoms and obtain the necessary documentation." },
-      { question: "Is there a fee for the medical exemption process in Ohio?", answer: "There is no official fee for obtaining a medical window tint exemption in Ohio. However, you may incur costs from your physician for the consultation and completion of the exemption form. It's best to check with your doctor's office regarding any associated costs." },
-      { question: "Can I tint my windows darker than the standard limits with an exemption?", answer: "Yes, with a medical exemption, you are allowed to tint your windows darker than the standard limits set by Ohio law. However, it's important to ensure that your tinting complies with the specific requirements outlined in your exemption." },
-      { question: "Do I need to carry the exemption form at all times?", answer: "Yes, it is recommended to carry your signed medical exemption form in your vehicle at all times. This will serve as proof of your legal right to have darker tints if you are pulled over by law enforcement." },
-      { question: "What should I do if I receive a ticket for my window tint?", answer: "If you receive a ticket for your window tint, remain calm and present your medical exemption form to the officer. If the officer does not recognize your exemption, you may want to appeal the ticket by providing documentation and explaining your situation." },
-      { question: "How long is the medical exemption valid?", answer: "The medical exemption does not have a set expiration date, but it's important to periodically review your status with your physician. If your condition changes or if required, you may need to renew the exemption." },
-      { question: "Can I transfer my exemption to a different vehicle?", answer: "Yes, you can transfer your medical exemption to a different vehicle. However, you should ensure that the new vehicle complies with the tint regulations and carry your exemption documentation while driving." },
-      { question: "What happens if my physician refuses to sign the exemption form?", answer: "If your physician refuses to sign the exemption form, it may be necessary to seek a second opinion or find a physician who understands your condition and the need for the exemption. You must have a qualifying medical professional complete the form for your application to be valid." },
-    ],
+    howToSteps: buildStateSteps("Ohio"),
+    pulledOverAdvice: enforcementGuidance("Ohio"),
+    commonMistakes: buildStateCommonMistakes("Ohio"),
+    faq: buildStateFaq("Ohio", 250, true),
     nearbyStates: [
       { name: "Indiana", abbreviation: "IN", slug: "indiana" },
       { name: "Kentucky", abbreviation: "KY", slug: "kentucky" },
@@ -113,8 +168,8 @@ export const states: Record<string, StateData> = {
     allowsMedicalExemption: true,
     price: 225,
     originalPrice: 325,
-    heroTitle: "Unlock Your Comfort with Texas Window Tint Exemptions",
-    heroDescription: "If you suffer from light sensitivity, navigating Texas roads can be a challenge. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
+    heroTitle: stateHeroTitle("Texas"),
+    heroDescription: stateHeroDescription("Texas"),
     tintLaws: {
       frontWindshield: "25% VLT above AS-1 line",
       frontSideWindows: "25% VLT",
@@ -124,40 +179,14 @@ export const states: Record<string, StateData> = {
     ticketFine: "$250",
     dmvFiling: "Not Required",
     exemptionDuration: "Per physician recommendation",
-    qualifyingConditions: [
-      { name: "Lupus", description: "Lupus is an autoimmune disease that causes extreme sensitivity to sunlight and UV radiation. Having darker window tints can significantly reduce flare-ups while driving." },
-      { name: "Melanoma", description: "History of skin cancer requiring minimized UV exposure to prevent recurrence. Darker tints provide essential protection during daily commutes." },
-      { name: "Photosensitivity", description: "An increased sensitivity to light that can cause adverse reactions. Darker tints minimize light exposure during travel." },
-      { name: "Albinism", description: "Individuals with albinism are extremely sensitive to bright lights and at higher risk of sunburn and vision problems." },
-      { name: "Porphyria", description: "A group of disorders affecting the nervous system or skin, causing sensitivity to sunlight." },
-      { name: "Eye Conditions", description: "Certain eye conditions such as cataracts or macular degeneration can lead to heightened sensitivity to light." },
-    ],
-    understandingSection: "In Texas, window tint exemptions are vital for residents dealing with medical conditions that amplify light sensitivity. The Lone Star State's intense sun and heat can make driving particularly challenging for those with conditions like lupus, melanoma, or photosensitivity. Texas window tint laws aim to balance safety with personal preference, but they can create difficulties for those who need more protection. Obtaining a medical exemption is essential for ensuring safer, more comfortable driving conditions.",
-    whatIsExemption: "A medical window tint exemption in Texas allows individuals with qualifying medical conditions to have darker window tints than standard law permits. Texas law requires a signed statement from a licensed physician confirming the medical necessity. This statement must be kept in the vehicle at all times as proof of the exemption.",
+    qualifyingConditions: buildRelevantConditions(),
+    understandingSection: stateOverview("Texas"),
+    whatIsExemption: stateExemptionExplanation("Texas"),
     tintLawsDescription: "Texas window tint laws in 2026 set specific limits on visible light transmission. Front side windows must allow at least 25% VLT, and the windshield can have tint above the AS-1 line with 25% VLT. Back side windows also require 25% VLT, while the rear window has no restrictions. Violations can result in fines up to $250.",
-    howToSteps: [
-      { title: "Consult with Your Physician", description: "Discuss your condition and how light sensitivity affects your daily life, especially driving. Your physician will provide a signed statement confirming your medical need." },
-      { title: "Keep the Exemption Statement in Your Vehicle", description: "Texas does not require DMV filing. Keep the signed physician statement in your vehicle at all times as proof of your medical exemption." },
-      { title: "After Your Approval", description: "Once you have your physician's signed statement, you can legally tint your vehicle windows darker than standard limits. Always carry the statement when driving." },
-    ],
-    pulledOverAdvice: "If pulled over for window tint in Texas, remain calm and respectful. Inform the officer you have a medical exemption and present your physician's signed statement. This document confirms your legal right to darker tints. If the officer doesn't recognize it, politely request to speak with a supervisor.",
-    commonMistakes: [
-      { title: "Failing to Obtain a Proper Medical Statement", description: "Ensure your physician provides a properly signed statement that meets Texas requirements." },
-      { title: "Not Keeping the Exemption Statement in the Vehicle", description: "Always keep your signed physician statement in the vehicle. Without it, you may receive a citation." },
-      { title: "Choosing an Inexperienced Tint Installer", description: "Work with a professional installer who understands medical exemption tint levels." },
-      { title: "Ignoring Legal Tint Limits", description: "Even with an exemption, understand what limits apply to your specific situation." },
-      { title: "Not Understanding Your Rights", description: "Know your rights during traffic stops related to window tint." },
-    ],
-    faq: [
-      { question: "How long does it take to get a medical exemption statement?", answer: "Most patients receive their statement within 24-48 hours of their consultation." },
-      { question: "Is there a fee for getting a medical tint exemption?", answer: "There may be costs associated with the physician consultation. Our service is $225 for the complete process." },
-      { question: "Can I tint my windows darker than allowed if I have an exemption?", answer: "Yes, with a valid medical exemption, you can have darker tints than standard Texas limits." },
-      { question: "Do I need to renew my medical exemption statement?", answer: "This depends on your physician's recommendation. Some statements may need periodic renewal." },
-      { question: "What should I do if I get a ticket despite having a medical exemption?", answer: "Present your medical exemption statement and appeal the ticket through the court system." },
-      { question: "Can I transfer my exemption to another vehicle?", answer: "The exemption is tied to your medical condition, not a specific vehicle. Carry your statement in whichever vehicle you drive." },
-      { question: "What happens if my exemption statement is lost?", answer: "Contact your physician to obtain a replacement statement as soon as possible." },
-      { question: "Do I need to inform the DMV about my exemption?", answer: "No, Texas does not require DMV registration of medical tint exemptions." },
-    ],
+    howToSteps: buildStateSteps("Texas"),
+    pulledOverAdvice: enforcementGuidance("Texas"),
+    commonMistakes: buildStateCommonMistakes("Texas"),
+    faq: buildStateFaq("Texas", 225, true),
     nearbyStates: [
       { name: "Louisiana", abbreviation: "LA", slug: "louisiana" },
       { name: "Oklahoma", abbreviation: "OK", slug: "oklahoma" },
@@ -173,8 +202,8 @@ export const states: Record<string, StateData> = {
     allowsMedicalExemption: true,
     price: 250,
     originalPrice: 350,
-    heroTitle: "Secure Your Medical Window Tint Exemption in California",
-    heroDescription: "If you suffer from light sensitivity, driving in California's sunny climate can be particularly challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
+    heroTitle: stateHeroTitle("California"),
+    heroDescription: stateHeroDescription("California"),
     tintLaws: {
       frontWindshield: "70% VLT on top 4 inches",
       frontSideWindows: "70% VLT",
@@ -184,40 +213,14 @@ export const states: Record<string, StateData> = {
     ticketFine: "$250",
     dmvFiling: "Not Required",
     exemptionDuration: "Per physician recommendation",
-    qualifyingConditions: [
-      { name: "Lupus", description: "An autoimmune disease that causes extreme sensitivity to sunlight and UV radiation." },
-      { name: "Melanoma", description: "History of skin cancer requiring minimized UV exposure to prevent recurrence." },
-      { name: "Severe Photosensitivity", description: "Extreme sensitivity to light causing significant discomfort or medical reactions." },
-      { name: "Xeroderma Pigmentosum", description: "A rare genetic disorder where the body cannot repair UV damage." },
-      { name: "Porphyria", description: "A group of disorders causing sensitivity to sunlight." },
-    ],
-    understandingSection: "In California, window tint exemptions are crucial for residents with medical conditions that amplify light sensitivity. California's year-round sunshine can make driving particularly challenging for those with conditions like lupus or melanoma. The state's tint laws are among the strictest in the nation, making medical exemptions especially important for those who need additional protection.",
-    whatIsExemption: "A medical window tint exemption in California allows individuals with qualifying conditions to apply tinting that would otherwise exceed legal limits. California requires a certificate signed by a licensed physician specifying the medical necessity for the exemption.",
+    qualifyingConditions: buildRelevantConditions(),
+    understandingSection: stateOverview("California"),
+    whatIsExemption: stateExemptionExplanation("California"),
     tintLawsDescription: "California has strict window tint laws. Front side windows must allow at least 70% VLT. The windshield can only have non-reflective tint on the top 4 inches. Back side and rear windows can be any darkness. Violations can result in fix-it tickets and fines up to $250.",
-    howToSteps: [
-      { title: "Visit a Licensed Physician", description: "Consult with a physician who can evaluate your condition and provide the necessary medical documentation." },
-      { title: "Obtain a Medical Exemption Certificate", description: "Your physician will complete a medical exemption certificate detailing your condition and the need for darker tints." },
-      { title: "Keep Your Certificate Ready", description: "Keep the signed certificate in your vehicle at all times as proof of your medical exemption." },
-      { title: "After Your Approval", description: "With your certificate, you can legally have your windows tinted darker than standard limits. Always carry the certificate when driving." },
-    ],
-    pulledOverAdvice: "If pulled over in California for window tint, remain calm and inform the officer of your medical exemption. Present your physician's certificate promptly. California officers are generally familiar with medical exemptions, but having documentation ready is essential.",
-    commonMistakes: [
-      { title: "Failing to Consult the Right Physician", description: "Ensure your physician understands medical exemptions and can provide proper documentation." },
-      { title: "Incorrectly Documenting Your Condition", description: "Make sure all medical documentation accurately reflects your condition." },
-      { title: "Neglecting to Keep Your Certificate Accessible", description: "Always keep your exemption certificate in the vehicle." },
-      { title: "Ignoring Renewal Requirements", description: "Check if your certificate needs periodic renewal." },
-      { title: "Not Understanding Tint Regulations", description: "Even with an exemption, understand the specific limits that apply." },
-    ],
-    faq: [
-      { question: "How can I qualify for a medical window tint exemption in California?", answer: "You need a medical condition that causes light sensitivity, documented by a licensed physician." },
-      { question: "Do I need to file my medical exemption with the DMV?", answer: "No, California does not require DMV registration of medical tint exemptions." },
-      { question: "What are the risks of driving without a medical exemption?", answer: "You may receive fix-it tickets and fines up to $250 for non-compliant tint without an exemption." },
-      { question: "Can I appeal a ticket if I'm pulled over for my tint?", answer: "Yes, present your medical exemption certificate to appeal the citation." },
-      { question: "How long does the exemption process take?", answer: "Most patients receive their certificate within 24-48 hours of consultation." },
-      { question: "Is there a fee for obtaining a medical exemption certificate?", answer: "Our consultation fee is $250, which includes the physician evaluation and certificate." },
-      { question: "What should I do if my medical condition changes?", answer: "Consult your physician to update your documentation as needed." },
-      { question: "Are there limits to the darkness of tint I can have?", answer: "Your physician will specify appropriate tint levels based on your medical needs and state regulations." },
-    ],
+    howToSteps: buildStateSteps("California"),
+    pulledOverAdvice: enforcementGuidance("California"),
+    commonMistakes: buildStateCommonMistakes("California"),
+    faq: buildStateFaq("California", 250, true),
     nearbyStates: [
       { name: "Nevada", abbreviation: "NV", slug: "nevada" },
       { name: "Arizona", abbreviation: "AZ", slug: "arizona" },
@@ -232,8 +235,8 @@ export const states: Record<string, StateData> = {
     allowsMedicalExemption: true,
     price: 250,
     originalPrice: 350,
-    heroTitle: "Get Your Medical Window Tint Exemption in Florida",
-    heroDescription: "If you suffer from light sensitivity, Florida's intense sunshine can make driving especially difficult. Learn how to obtain a medical exemption for your vehicle's window tinting needs.",
+    heroTitle: stateHeroTitle("Florida"),
+    heroDescription: stateHeroDescription("Florida"),
     tintLaws: {
       frontWindshield: "Non-reflective above AS-1 line",
       frontSideWindows: "28% VLT",
@@ -243,41 +246,14 @@ export const states: Record<string, StateData> = {
     ticketFine: "$116",
     dmvFiling: "Required",
     exemptionDuration: "Per DMV approval",
-    qualifyingConditions: [
-      { name: "Lupus", description: "An autoimmune disease causing extreme sensitivity to sunlight and UV radiation." },
-      { name: "Melanoma", description: "History of skin cancer requiring minimized UV exposure to prevent recurrence." },
-      { name: "Photosensitivity", description: "Increased sensitivity to light causing adverse reactions." },
-      { name: "Certain Skin Conditions", description: "Various dermatological conditions exacerbated by sunlight exposure." },
-      { name: "Post-Transplant Patients", description: "Organ transplant recipients on immunosuppressive medications with increased sun sensitivity." },
-    ],
-    understandingSection: "In Florida, window tint exemptions are essential for residents dealing with medical conditions amplified by the state's intense sunshine. Florida's tropical climate means year-round UV exposure, making driving particularly challenging for those with light-sensitive conditions. The state offers a specific medical exemption process through the DMV.",
-    whatIsExemption: "A medical window tint exemption in Florida allows individuals with qualifying conditions to have darker tints than standard law permits. Florida has a specific Sunscreening Medical Exemption form that must be completed by a physician and submitted to the DMV for approval.",
+    qualifyingConditions: buildRelevantConditions(),
+    understandingSection: stateOverview("Florida"),
+    whatIsExemption: stateExemptionExplanation("Florida"),
     tintLawsDescription: "Florida allows front side windows with at least 28% VLT and back side and rear windows with at least 15% VLT. The windshield can have non-reflective tint above the AS-1 line. Violations can result in fines of approximately $116.",
-    howToSteps: [
-      { title: "Obtain the Sunscreening Medical Exemption Form", description: "Get the official Florida medical exemption form from the DMV or download it online." },
-      { title: "Complete the Form", description: "Have your physician complete and sign the form, documenting your medical condition and the need for darker tints." },
-      { title: "Submit the Form to the DMV", description: "Submit the completed form to the Florida DMV for processing and approval." },
-      { title: "Receive Your Exemption Sticker", description: "Upon approval, you'll receive an exemption sticker to display on your vehicle." },
-      { title: "After Your Approval", description: "Display the exemption sticker and carry your documentation. The sticker serves as visual proof of your exemption during traffic stops." },
-    ],
-    pulledOverAdvice: "In Florida, your exemption sticker should be visible to officers. If pulled over, point out the sticker and present your medical documentation. Florida officers are familiar with the DMV exemption program.",
-    commonMistakes: [
-      { title: "Incomplete Application", description: "Ensure all sections of the Sunscreening Medical Exemption form are completed." },
-      { title: "Not Following Up", description: "Follow up with the DMV to ensure your application is processed." },
-      { title: "Failing to Display the Exemption Sticker", description: "Always display your DMV-issued exemption sticker on your vehicle." },
-      { title: "Ignoring Expiry Dates", description: "Check if your exemption has an expiration date and renew as needed." },
-      { title: "Neglecting to Carry Documentation", description: "Keep your medical documentation in the vehicle in addition to the sticker." },
-    ],
-    faq: [
-      { question: "How long does it take to get a medical window tint exemption in Florida?", answer: "Processing time varies, but most applications are processed within a few weeks by the DMV." },
-      { question: "Is there a fee for the medical exemption application?", answer: "There may be nominal DMV fees. Our physician consultation is $250." },
-      { question: "Can I tint my front windshield with the exemption?", answer: "This depends on your specific medical needs and what your physician documents." },
-      { question: "What happens if I get a ticket for window tint before my exemption is approved?", answer: "Present proof of your pending application to the court when contesting the ticket." },
-      { question: "Can I transfer my exemption to a different vehicle?", answer: "Contact the Florida DMV about transferring your exemption to a new vehicle." },
-      { question: "What should I do if my exemption sticker is lost or damaged?", answer: "Contact the Florida DMV to request a replacement sticker." },
-      { question: "Do I need a doctor's note every time I apply for an exemption?", answer: "A new physician statement may be required for renewals." },
-      { question: "Are there any limits to how dark I can tint my windows with an exemption?", answer: "Your physician will specify appropriate levels based on your medical needs." },
-    ],
+    howToSteps: buildStateSteps("Florida"),
+    pulledOverAdvice: enforcementGuidance("Florida"),
+    commonMistakes: buildStateCommonMistakes("Florida"),
+    faq: buildStateFaq("Florida", 250, true),
     nearbyStates: [
       { name: "Georgia", abbreviation: "GA", slug: "georgia" },
       { name: "Alabama", abbreviation: "AL", slug: "alabama" },
@@ -449,12 +425,8 @@ function generateDefaultState(base: typeof allStatesBase[0]): StateData {
     allowsMedicalExemption: allowsExemption,
     price,
     originalPrice,
-    heroTitle: allowsExemption
-      ? `Get Your Medical Window Tint Exemption in ${base.name}`
-      : `${base.name} Window Tint Laws — No Medical Exemption Available`,
-    heroDescription: allowsExemption
-      ? `If you suffer from light sensitivity, driving in ${base.name} can be challenging. Learn how to obtain a medical exemption for your vehicle's window tinting needs.`
-      : `${base.name} does not currently offer a medical exemption for window tint. Learn about the state's tint laws and your options.`,
+    heroTitle: stateHeroTitle(base.name),
+    heroDescription: stateHeroDescription(base.name),
     tintLaws: {
       frontWindshield: td ? td.windshield : "Non-reflective above AS-1 line",
       frontSideWindows: td ? td.front : "Check state law",
@@ -464,62 +436,16 @@ function generateDefaultState(base: typeof allStatesBase[0]): StateData {
     ticketFine: td ? td.fine : "Varies by state",
     dmvFiling: td ? td.dmv : "Check state requirements",
     exemptionDuration: td ? td.duration : "Per physician recommendation",
-    qualifyingConditions: allowsExemption ? [
-      { name: "Lupus", description: "An autoimmune disease that causes extreme sensitivity to sunlight and UV radiation." },
-      { name: "Photosensitivity", description: "Increased sensitivity to light causing adverse reactions such as rashes, headaches, or seizures." },
-      { name: "Albinism", description: "A genetic condition causing lack of melanin, resulting in extreme sensitivity to sunlight." },
-      { name: "Eye Conditions", description: "Conditions such as cataracts or macular degeneration that cause heightened light sensitivity." },
-      { name: "Skin Conditions", description: "Dermatological conditions exacerbated by sunlight exposure." },
-    ] : [],
-    understandingSection: allowsExemption
-      ? `In ${base.name}, window tint exemptions are available for residents with medical conditions that cause light sensitivity. Front side windows must allow at least ${td ? td.front : "the state-required VLT"} of light, while back windows require ${td ? td.back : "the state-required VLT"}. Violations can result in fines of ${td ? td.fine : "varying amounts"}. If you have a qualifying medical condition, obtaining an exemption allows you to legally have darker tints for safer, more comfortable driving.`
-      : `${base.name} does not currently have a provision for medical window tint exemptions. Even with a doctor's note, the state does not allow darker tints beyond the standard legal limits. Front side windows must allow at least ${td ? td.front : "the required amount"} of light. Violations can result in fines of ${td ? td.fine : "varying amounts"}. If you live in ${base.name} and suffer from light sensitivity, consider other protective measures such as UV-blocking clear film, polarized sunglasses, or sun visors.`,
-    whatIsExemption: allowsExemption
-      ? `A medical window tint exemption in ${base.name} allows individuals with specific medical conditions to have darker window tints than what is typically permitted by state law. Standard limits require front side windows to allow at least ${td ? td.front : "a certain percentage"} of visible light. With a valid medical exemption from a licensed physician, these limits can be relaxed to accommodate your medical needs.`
-      : `${base.name} does not offer medical window tint exemptions. The state's tint laws apply uniformly to all drivers regardless of medical conditions. Front side windows must allow ${td ? td.front : "the required amount"} of light, with no exceptions for medical needs.`,
+    qualifyingConditions: allowsExemption ? buildRelevantConditions() : [],
+    understandingSection: stateOverview(base.name),
+    whatIsExemption: stateExemptionExplanation(base.name, allowsExemption),
     tintLawsDescription: td
-      ? `${base.name}'s window tint laws in 2026 set specific limits on visible light transmission (VLT). Front side windows must allow at least ${td.front}, back side windows require ${td.back}, and the rear window requires ${td.rear}. The windshield allows ${td.windshield.toLowerCase()}. Violations can result in fines of ${td.fine}.${allowsExemption ? " With a valid medical exemption, you may be permitted darker tints on qualifying windows." : " No medical exemptions are available in this state."}`
-      : `${base.name}'s window tint laws are designed to ensure safety while allowing some personal preference. Check your state's specific VLT requirements for each window.`,
-    howToSteps: allowsExemption ? [
-      { title: "Consult Your Physician", description: `Discuss your condition and how light sensitivity affects your daily life, especially when driving. Your physician will provide the necessary documentation for your ${base.name} medical exemption.` },
-      { title: "Complete the Medical Exemption Form", description: "Fill out the required medical exemption paperwork with your physician's help. Ensure all sections are completed accurately with your diagnosis and recommended tint levels." },
-      { title: "Submit Your Application", description: `Follow ${base.name}'s specific process for submitting the medical exemption.${td ? ` Filing requirement: ${td.dmv}.` : ""}` },
-      { title: "After Your Approval", description: `Keep your exemption documentation in your vehicle at all times. This serves as your legal protection during traffic stops in ${base.name}.${td ? ` Your exemption is valid for: ${td.duration}.` : ""}` },
-    ] : [
-      { title: "Understand the Limitation", description: `${base.name} does not currently allow medical exemptions for window tint. No doctor's note or medical documentation will permit darker tints beyond standard legal limits.` },
-      { title: "Explore Alternatives", description: "Consider UV-blocking clear window film (which doesn't reduce VLT), high-quality polarized sunglasses, or clip-on sun visors for your vehicle." },
-      { title: "Check Neighboring States", description: "If you frequently drive in neighboring states that do allow medical exemptions, you may be able to obtain an exemption there, though it may not be honored in your home state." },
-    ],
-    pulledOverAdvice: allowsExemption
-      ? `If pulled over for window tint in ${base.name}, remain calm and respectful. Inform the officer you have a medical exemption and present your documentation promptly. Know your rights and keep your exemption paperwork accessible at all times.`
-      : `${base.name} does not offer medical tint exemptions. If pulled over for illegal tint, you may face a fine of ${td ? td.fine : "varying amounts"}. You cannot use a medical condition as a defense for illegal window tint in this state.`,
-    commonMistakes: allowsExemption ? [
-      { title: "Not Consulting with a Qualified Physician", description: "Ensure your physician can provide proper documentation for your medical exemption." },
-      { title: "Incomplete Documentation", description: "Make sure all required paperwork is properly completed and signed." },
-      { title: "Not Keeping Documentation in Vehicle", description: "Always carry your exemption documentation in your vehicle." },
-      { title: "Ignoring Legal Limits", description: "Even with an exemption, understand the specific limits that apply in your state." },
-      { title: "Forgetting About Renewals", description: `Check if your exemption needs periodic renewal.${td ? ` Duration: ${td.duration}.` : ""}` },
-    ] : [
-      { title: "Assuming a Doctor's Note Is Sufficient", description: `${base.name} does not honor medical exemptions for window tint, regardless of documentation.` },
-      { title: "Applying Tint Based on Other States' Laws", description: "Each state has its own laws. An exemption from another state is not valid in a state that doesn't offer them." },
-      { title: "Not Knowing Your State's Limits", description: `Front side windows must allow ${td ? td.front : "the required amount"} in ${base.name}. Violations carry fines of ${td ? td.fine : "varying amounts"}.` },
-    ],
-    faq: allowsExemption ? [
-      { question: `How do I know if I qualify for a medical window tint exemption in ${base.name}?`, answer: `To qualify in ${base.name}, you need a medical condition that causes light sensitivity — such as lupus, photophobia, migraines, or skin cancer — documented by a licensed physician. Our service connects you with a physician who can evaluate your condition.` },
-      { question: "Is there a fee for the medical exemption process?", answer: `Our consultation fee is $${price}, which includes the physician evaluation and signed exemption certificate. This is a one-time fee.` },
-      { question: `What are the tint limits in ${base.name}?`, answer: `Without an exemption, front side windows must allow ${td ? td.front : "the state-required amount"}, back side windows require ${td ? td.back : "the state-required amount"}, and the rear window requires ${td ? td.rear : "the state-required amount"}.` },
-      { question: "Do I need to carry the exemption at all times?", answer: `Yes. ${td ? `In ${base.name}: ${td.dmv}.` : "Always keep your medical exemption documentation in your vehicle."}` },
-      { question: `What is the fine for illegal tint in ${base.name}?`, answer: `Fines for illegal window tint in ${base.name} are typically ${td ? td.fine : "varying amounts"}. A valid medical exemption protects you from these fines.` },
-      { question: `How long is the medical exemption valid in ${base.name}?`, answer: `${td ? td.duration : "Duration varies. Check with your physician."}. You may need to renew it periodically.` },
-      { question: "Can I transfer my exemption to a different vehicle?", answer: "In most cases, the exemption is tied to your medical condition, not a specific vehicle. Carry your documentation in whichever vehicle you drive." },
-      { question: "What if my physician refuses to sign the exemption?", answer: "Our licensed physicians specialize in evaluating patients for medical tint exemptions. If you have a qualifying condition, we can help." },
-    ] : [
-      { question: `Does ${base.name} allow medical window tint exemptions?`, answer: `No. ${base.name} does not currently have a provision for medical window tint exemptions. The state's tint laws apply to all drivers regardless of medical conditions.` },
-      { question: `What are the tint limits in ${base.name}?`, answer: `Front side windows must allow ${td ? td.front : "the required amount"}, back side windows require ${td ? td.back : "the required amount"}, and the rear window requires ${td ? td.rear : "the required amount"}.` },
-      { question: `What is the fine for illegal tint in ${base.name}?`, answer: `Fines for illegal window tint in ${base.name} are ${td ? td.fine : "varying amounts"}.` },
-      { question: "What alternatives do I have for light sensitivity?", answer: "Consider UV-blocking clear window film, high-quality polarized sunglasses, clip-on visors, or wearing a wide-brimmed hat while driving." },
-      { question: "Can I use an exemption from another state?", answer: `No. An exemption from another state is generally not valid in ${base.name} since the state does not recognize medical tint exemptions.` },
-    ],
+      ? `This site's 2026 summary lists ${td.front} for front side windows, ${td.back} for back side windows, ${td.rear} for the rear window, and ${td.windshield.toLowerCase()} for the windshield in ${base.name}. It lists a possible fine of ${td.fine}. These values are educational and may be incomplete, outdated, vehicle-specific, or affected by later legal changes. Verify every value and any medical exception directly with the responsible state agency before relying on it.`
+      : `Window-tint rules can differ by window, vehicle, material, and later legal changes. Verify ${base.name}'s current VLT and medical-documentation requirements directly with the responsible state agency before relying on this summary.`,
+    howToSteps: buildStateSteps(base.name, allowsExemption),
+    pulledOverAdvice: enforcementGuidance(base.name),
+    commonMistakes: buildStateCommonMistakes(base.name),
+    faq: buildStateFaq(base.name, price, isOffered, allowsExemption),
   };
 }
 

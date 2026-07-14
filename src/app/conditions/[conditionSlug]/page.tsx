@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = `https://www.onlinetintexemption.com/conditions/${condition.slug}`;
   return {
     title: condition.metaTitle,
-    description: `${condition.shortDescription} Learn how ${condition.name} qualifies for a medical window tint exemption. Fast online approval, $249.`,
+    description: `${condition.shortDescription} Learn how documentation and state-specific window tint exemption rules may apply. Eligibility is not guaranteed.`,
     keywords: [
       `${condition.name} window tint exemption`,
       `${condition.name} tint exemption`,
@@ -55,7 +55,7 @@ export default async function ConditionPage({ params }: PageProps) {
 
   const conditionSchema = {
     "@context": "https://schema.org",
-    "@type": "MedicalWebPage",
+    "@type": "WebPage",
     name: condition.heroTitle,
     description: condition.heroDescription,
     url: pageUrl,
@@ -63,22 +63,11 @@ export default async function ConditionPage({ params }: PageProps) {
       "@type": "MedicalCondition",
       name: condition.name,
       description: condition.understandingSection,
-      possibleTreatment: {
-        "@type": "MedicalTherapy",
-        name: "Medical Window Tint Exemption",
-        description: condition.howToGet,
-      },
     },
-    mainEntity: {
-      "@type": "MedicalProcedure",
-      name: `Window Tint Exemption for ${condition.name}`,
-      description: condition.howToGet,
-      procedureType: "https://schema.org/NoninvasiveProcedure",
-      provider: {
-        "@type": "MedicalBusiness",
-        name: "Online Tint Exemption",
-        url: "https://www.onlinetintexemption.com",
-      },
+    publisher: {
+      "@type": "Organization",
+      name: "Online Tint Exemption",
+      url: "https://www.onlinetintexemption.com",
     },
   };
 
@@ -129,13 +118,22 @@ export default async function ConditionPage({ params }: PageProps) {
                 href="/book"
                 className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Get Your Exemption
+                Start Secure Intake
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Link>
             </div>
           </div>
         </div>
       </section>
+
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-muted-foreground">
+          This page is general education, not a diagnosis, treatment plan, legal
+          advice, or clinical approval. Symptoms, state rules, document
+          requirements, and provider decisions vary. Confirm current legal
+          requirements with the responsible state agency.
+        </p>
+      </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -161,7 +159,7 @@ export default async function ConditionPage({ params }: PageProps) {
 
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                Why {condition.name} Qualifies for a Window Tint Exemption
+                How State Exemption Rules May Relate to {condition.name}
               </h2>
               <p className="text-muted-foreground leading-relaxed">
                 {condition.whyQualifies}
@@ -170,7 +168,7 @@ export default async function ConditionPage({ params }: PageProps) {
 
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                How to Get a Tint Exemption for {condition.name} in 2026
+                Documentation and Application Steps for {condition.name}
               </h2>
               <p className="text-muted-foreground leading-relaxed">
                 {condition.howToGet}
@@ -182,10 +180,12 @@ export default async function ConditionPage({ params }: PageProps) {
                 Explore More Before You Apply
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                {condition.name} is one of many qualifying conditions for a medical
-                window tint exemption. Browse our{" "}
+                {condition.name} is one of several conditions associated with light
+                sensitivity. Whether it supports an exemption depends on current
+                state rules, your symptoms, and an independent clinician&apos;s review.
+                Browse our{" "}
                 <Link href="/conditions" className="text-primary hover:underline">
-                  full list of qualifying medical conditions
+                  educational condition guides
                 </Link>{" "}
                 to see whether others may also apply to you, review common questions
                 on our{" "}
@@ -196,7 +196,9 @@ export default async function ConditionPage({ params }: PageProps) {
                 <Link href="/book" className="text-primary hover:underline">
                   start your online application
                 </Link>{" "}
-                to have a licensed physician review your documentation.
+                  to submit information for review. Online Tint Exemption handles
+                  intake and payment; independent licensed providers make clinical
+                  decisions through our official partner, MyEyeRx.net.
               </p>
             </section>
 
@@ -212,7 +214,7 @@ export default async function ConditionPage({ params }: PageProps) {
             {/* Doctor Questions */}
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-6">
-                Questions Your Doctor May Ask About {condition.name}
+                Topics a Reviewing Provider May Consider for {condition.name}
               </h2>
               <div className="space-y-3">
                 {condition.doctorQuestions.map((item, i) => (
@@ -249,7 +251,7 @@ export default async function ConditionPage({ params }: PageProps) {
 
             {/* State Links */}
             <section>
-              <h2 className="text-2xl font-bold text-foreground mb-4">Get Your Exemption by State</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Review Rules by Available State</h2>
               <p className="text-muted-foreground mb-4">Select your state to learn about specific requirements:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
@@ -271,7 +273,7 @@ export default async function ConditionPage({ params }: PageProps) {
                 ))}
               </div>
               <Link href="/" className="inline-flex items-center text-sm text-primary font-medium mt-3 hover:underline">
-                View all 50 states <ChevronRight className="ml-1 h-4 w-4" />
+                View available states <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </section>
 
@@ -298,13 +300,16 @@ export default async function ConditionPage({ params }: PageProps) {
             <section className="rounded-xl border border-border bg-card p-8">
               <h2 className="text-2xl font-bold text-card-foreground mb-2">Take the Next Step</h2>
               <p className="text-muted-foreground mb-6">
-                If you are living with {condition.name.toLowerCase()} and struggle with light sensitivity, a window tint exemption could significantly improve your driving experience. Take the first step by consulting with your healthcare provider and exploring the application process in your state. You deserve to drive safely and comfortably.
+                If you live with {condition.name.toLowerCase()} and light sensitivity,
+                discuss your symptoms with your healthcare provider and review your
+                state&apos;s current requirements. An exemption is not guaranteed, and
+                this educational page is not medical or legal advice.
               </p>
               <Link
                 href="/book"
                 className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Get Started Now
+                Start Secure Intake
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Link>
             </section>
@@ -314,13 +319,13 @@ export default async function ConditionPage({ params }: PageProps) {
           <aside className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
               <div className="rounded-xl border border-primary/30 bg-card p-6">
-                <h3 className="text-lg font-bold text-card-foreground mb-4">Get Your Exemption</h3>
+                <h3 className="text-lg font-bold text-card-foreground mb-4">Secure Intake</h3>
                 <ul className="space-y-3 mb-6">
                   {[
-                    "Licensed physician consultation",
-                    "24-hour certificate delivery",
-                    "100% money-back guarantee",
-                    "All 50 states covered",
+                    "Independent provider review",
+                    "State-specific intake",
+                    "Published refund terms",
+                    "Available states shown online",
                     "Secure online process",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -333,10 +338,10 @@ export default async function ConditionPage({ params }: PageProps) {
                   href="/book"
                   className="block w-full text-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  Get Started Now
+                  Start Secure Intake
                 </Link>
-                <p className="mt-2 text-center text-xs text-muted-foreground">Takes less than 5 minutes</p>
-                <p className="mt-1 text-center text-xs text-muted-foreground">Secure • Confidential • Licensed</p>
+                <p className="mt-2 text-center text-xs text-muted-foreground">Have your ID and supporting documents ready.</p>
+                <p className="mt-1 text-center text-xs text-muted-foreground">Secure &bull; Private &bull; Reviewed</p>
               </div>
 
               <div className="rounded-xl border border-border bg-card p-6">
@@ -345,7 +350,8 @@ export default async function ConditionPage({ params }: PageProps) {
                   <h3 className="font-semibold text-card-foreground">Not Sure If You Qualify?</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Our physicians will evaluate your condition during the consultation.
+                  Requirements vary by state. Contact support before paying if you
+                  have questions about acceptable documentation.
                 </p>
                 <Link href="/faq" className="inline-flex items-center text-sm text-primary font-medium hover:underline">
                   Read FAQ <ChevronRight className="ml-1 h-4 w-4" />

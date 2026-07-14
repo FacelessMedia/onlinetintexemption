@@ -1,283 +1,295 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { getStateBySlug } from "@/data/states";
+import { requiresDocumentsForPrice } from "@/lib/docs-policy";
+import { ensureApplicationSnapshot } from "@/lib/application-snapshot";
+import {
+  contactHasTag,
+  ghlConfig,
+  GHL_TAGS,
+  opportunityLifecycleTag,
+  routeMissingDocsLead,
+  upsertContact,
+  createOpportunity,
+} from "@/lib/ghl";
+import { issueOrderToken } from "@/lib/order-token";
+import {
+  checkRateLimit,
+  getClientIp,
+  isSameOriginRequest,
+  readBoundedJson,
+  RequestBodyError,
+  securityConfigurationErrors,
+  verifyBotChallenge,
+} from "@/lib/request-security";
+import {
+  firstValidationError,
+  submitOrderSchema,
+} from "@/lib/validation";
 
-const GHL_API_KEY = process.env.GHL_API_KEY!;
-const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID!;
-const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID!;
-const GHL_STAGE_INFO_SUBMITTED = process.env.GHL_STAGE_INFO_SUBMITTED!;
-const SITE_NAME = process.env.SITE_NAME || "online-tint-exemption";
-const GHL_BASE = "https://services.leadconnectorhq.com";
-
-// $250+ orders cannot pay until medical docs are uploaded. We surface this to
-// the client so the booking form can branch into the no-docs follow-up path;
-// the gate itself is ENFORCED server-side in /api/create-checkout.
-const DOCS_REQUIRED_MIN_PRICE = Number(process.env.DOCS_REQUIRED_MIN_PRICE || "250");
-
-// GHL custom field IDs — mapped from the (shared) location's custom fields.
-// Identical to the single-state EMD sites because onlinetint uses the same
-// GoHighLevel location.
-const GHL_FIELDS = {
-  state: "XYQinArWW9sHqQZMIMEL",
-  medicalIssues: "oCh0o1ch55zwKdM2W0e6",
-  medicalIssuesText: "2x3CtqgF32e6tZMiMH7k",
-  duration: "OZVR1tucQFKB69RM0U3Z",
-  frequency: "gaSMDFh4EtJ6tw9Lz5Kx",
-  hasSeenDoctor: "xAGfArcF3iLVRliKmeeM",
-  medications: "DLH2T0Beg09osYaySXiQ",
-  drivenTinted: "tz6tTXap2lGEnARMRL5J",
-  hadTinted: "MSLxqlfFvOun75DoYJHO",
-  tintPercent: "oogyg75OAKYLhdvgGM9K",
-  intendedDriver: "U7PA0hWgBwpKFbdPQQLH",
-  licensedDriver: "pg0vaf0q4aXNiQm7rhwm",
-  numVehicles: "kjrEm3wAT6gTW8A8EQcb",
-  howHeard: "s5Q7T4sinBIQyh1NFjxy",
-  liability: "Xasl2bCtEg8E5xeHyzZJ",
-  timeZone: "X7kro9snPBsIpGjnlPaN",
-  checkAllThatApply: "g9zWzdDXFsE7fodaTSRI",
-  explainExemption: "1w9p2gMshNniCi269qQw",
-};
-
-interface OrderPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  condition: string;
-  details: string;
-  medications: string;
-  duration: string;
-  frequency: string;
-  hasSeenDoctor: string;
-  hasTintedBefore: string;
-  currentTintPercent: string;
-  isLicensedDriver: string;
-  isIntendedDriver: string;
-  numberOfVehicles: string;
-  timeZone: string;
-  howDidYouHear: string;
-  state: string;
-  // Slug is used SERVER-SIDE to look up the authoritative price — the client
-  // never dictates the charge amount.
-  stateSlug: string;
-  docUploadChoice: string;
-}
-
-// ------- GHL Helpers -------
-
-async function ghlFetch(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${GHL_BASE}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${GHL_API_KEY}`,
-      "Content-Type": "application/json",
-      Version: "2021-07-28",
-      ...((options.headers as Record<string, string>) || {}),
-    },
-  });
-  return res;
-}
-
-async function findOrCreateContact(data: OrderPayload) {
-  const customFields = [
-    { id: GHL_FIELDS.state, value: data.state },
-    { id: GHL_FIELDS.medicalIssues, value: data.condition.split(", ") },
-    { id: GHL_FIELDS.medicalIssuesText, value: data.condition },
-    { id: GHL_FIELDS.duration, value: data.duration },
-    { id: GHL_FIELDS.frequency, value: data.frequency },
-    { id: GHL_FIELDS.hasSeenDoctor, value: data.hasSeenDoctor },
-    { id: GHL_FIELDS.medications, value: data.medications },
-    { id: GHL_FIELDS.drivenTinted, value: data.hasTintedBefore },
-    { id: GHL_FIELDS.tintPercent, value: data.currentTintPercent },
-    { id: GHL_FIELDS.intendedDriver, value: data.isIntendedDriver },
-    { id: GHL_FIELDS.licensedDriver, value: data.isLicensedDriver },
-    { id: GHL_FIELDS.numVehicles, value: data.numberOfVehicles },
-    { id: GHL_FIELDS.howHeard, value: data.howDidYouHear },
-    { id: GHL_FIELDS.liability, value: "Yes" },
-    { id: GHL_FIELDS.timeZone, value: data.timeZone },
-    { id: GHL_FIELDS.explainExemption, value: data.details },
-  ];
-
-  // /contacts/upsert handles email+phone dedup atomically and returns the
-  // contact id either way. This location is configured with duplicate
-  // detection on `phone`, so a plain POST /contacts/ would fail with HTTP 400
-  // whenever a household shares a phone number.
-  const upsertPayload = {
-    locationId: GHL_LOCATION_ID,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    email: data.email,
-    phone: data.phone,
-    dateOfBirth: data.dateOfBirth,
-    source: SITE_NAME,
-    tags: [
-      SITE_NAME,
-      "website-intake",
-      data.docUploadChoice === "now" ? "docs-uploaded" : "docs-pending",
-    ],
-    customFields,
-  };
-
-  const upsertRes = await ghlFetch("/contacts/upsert", {
-    method: "POST",
-    body: JSON.stringify(upsertPayload),
-  });
-
-  if (!upsertRes.ok) {
-    const errText = await upsertRes.text();
-    console.error("GHL upsert contact error:", upsertRes.status, errText);
-    throw new StageError(
-      "ghl-contact",
-      "We couldn't sync your information to our records system. Your payment was not charged.",
-      `ghl_status=${upsertRes.status} ghl_body=${errText.slice(0, 400)}`
-    );
-  }
-
-  const upserted = await upsertRes.json();
-  const contactId =
-    upserted?.contact?.id || upserted?.id || upserted?.contactId;
-
-  if (!contactId) {
-    console.error("GHL upsert returned no contactId:", upserted);
-    throw new StageError(
-      "ghl-contact",
-      "We couldn't sync your information to our records system. Your payment was not charged.",
-      `ghl_response_missing_id: ${JSON.stringify(upserted).slice(0, 300)}`
-    );
-  }
-
-  return contactId;
-}
-
-async function createOpportunity(
-  contactId: string,
-  data: OrderPayload,
-  priceDollars: number
-) {
-  // /opportunities/upsert avoids 400 "Can not create duplicate opportunity"
-  // for returning customers — it creates a new opp or updates the existing
-  // open one, keeping the customer in the pipeline either way.
-  const oppPayload = {
-    pipelineId: GHL_PIPELINE_ID,
-    pipelineStageId: GHL_STAGE_INFO_SUBMITTED,
-    locationId: GHL_LOCATION_ID,
-    contactId,
-    name: `${data.firstName} ${data.lastName} - ${data.state} Tint Exemption`,
-    status: "open",
-    source: SITE_NAME,
-    monetaryValue: priceDollars,
-  };
-
-  const res = await ghlFetch("/opportunities/upsert", {
-    method: "POST",
-    body: JSON.stringify(oppPayload),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("GHL upsert opportunity error:", res.status, err);
-    throw new Error(`Failed to upsert opportunity in GHL (status=${res.status})`);
-  }
-
-  const upserted = await res.json();
-  return upserted.opportunity?.id || upserted.id;
-}
-
-// StageError carries the failing pipeline stage along with the user-facing
-// message, so client and server logs can pinpoint exactly where things broke.
-class StageError extends Error {
-  stage: string;
-  detail?: string;
-  constructor(stage: string, message: string, detail?: string) {
-    super(message);
-    this.stage = stage;
-    this.detail = detail;
-  }
-}
-
-// ------- Main Handler -------
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  let stage = "start";
+  const securityErrors = securityConfigurationErrors("intake");
+  if (securityErrors.length > 0) {
+    console.error("Strict security configuration is incomplete:", securityErrors);
+    return NextResponse.json({ error: "Application intake is temporarily unavailable." }, { status: 503 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+  const ip = getClientIp(request);
+  let rate: Awaited<ReturnType<typeof checkRateLimit>>;
   try {
-    stage = "parse-body";
-    const body: OrderPayload = await request.json();
+    rate = await checkRateLimit(`submit:${ip}`, 5, 10 * 60);
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfter) } }
+    );
+  }
 
-    stage = "validate";
-    if (!body.firstName || !body.lastName || !body.email || !body.phone || !body.dateOfBirth) {
-      return NextResponse.json(
-        { error: "Missing required patient information.", stage },
-        { status: 400 }
-      );
+  let rawBody: unknown;
+  try {
+    rawBody = await readBoundedJson(request, 32 * 1024);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    const message = status === 413
+      ? "Request is too large."
+      : status === 415
+        ? "Content-Type must be application/json."
+        : "Invalid request.";
+    return NextResponse.json({ error: message }, { status });
+  }
+
+  const parsed = submitOrderSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: firstValidationError(parsed.error) },
+      { status: 400 }
+    );
+  }
+  const body = parsed.data;
+
+  const elapsed = Date.now() - body.formStartedAt;
+  if (elapsed < 3_000 || elapsed > 2 * 60 * 60 * 1_000) {
+    return NextResponse.json(
+      { error: "This form session is invalid or expired. Please refresh and try again." },
+      { status: 400 }
+    );
+  }
+
+  if (!(await verifyBotChallenge(body.botToken, request))) {
+    return NextResponse.json(
+      { error: "Please complete the security check and try again." },
+      { status: 403 }
+    );
+  }
+
+  let identityRate: Awaited<ReturnType<typeof checkRateLimit>>;
+  try {
+    identityRate = await checkRateLimit(
+      `submit-identity:${body.email.toLowerCase()}:${body.phone.replace(/\D/g, "")}`,
+      3,
+      60 * 60
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!identityRate.allowed) {
+    return NextResponse.json(
+      { error: "Too many applications were submitted for this contact information. Please contact support." },
+      { status: 429, headers: { "Retry-After": String(identityRate.retryAfter) } }
+    );
+  }
+
+  const stateData = getStateBySlug(body.stateSlug);
+  if (!stateData?.offered || !stateData.price || stateData.price <= 0) {
+    return NextResponse.json(
+      { error: "We do not currently offer online service for that state." },
+      { status: 400 }
+    );
+  }
+
+  const requiredConfig = [
+    ["GHL_API_KEY", ghlConfig.apiKey],
+    ["GHL_LOCATION_ID", ghlConfig.locationId],
+    ["GHL_PIPELINE_ID", ghlConfig.pipelineId],
+    ["GHL_STAGE_INFO_SUBMITTED", ghlConfig.stageInfoSubmitted],
+    ["ORDER_TOKEN_SECRET", process.env.ORDER_TOKEN_SECRET || ""],
+  ].filter(([, value]) => !value);
+  if (requiredConfig.length > 0) {
+    console.error(
+      "submit-order missing configuration:",
+      requiredConfig.map(([name]) => name)
+    );
+    return NextResponse.json(
+      { error: "Application intake is temporarily unavailable. Please contact support." },
+      { status: 503 }
+    );
+  }
+
+  const priceDollars = stateData.price;
+  const requiresDocs = requiresDocumentsForPrice(priceDollars);
+
+  try {
+    // No checkout is possible unless both the contact and opportunity exist.
+    // The contact remains in GHL if opportunity creation fails, preserving the
+    // lead for manual recovery while the browser receives a retryable error.
+    const contactId = await upsertContact({
+      ...body,
+      state: stateData.name,
+      stateCode: stateData.abbreviation,
+    });
+    // Scope client retry idempotency to this site and state. Reusing a UUID on
+    // another fleet site/state can never attach checkout to the wrong CRM deal.
+    const submissionReference = `web-${createHash("sha256")
+      .update(`${ghlConfig.siteName}:${stateData.slug}:${body.submissionId}`)
+      .digest("hex")
+      .slice(0, 32)}`;
+    const opportunityId = await createOpportunity(
+      contactId,
+      `${body.firstName} ${body.lastName} - ${stateData.name} Tint Exemption`,
+      priceDollars,
+      ghlConfig.stageInfoSubmitted,
+      submissionReference,
+      "open"
+    );
+    await ensureApplicationSnapshot({
+      contactId,
+      opportunityId,
+      submissionReference,
+      siteName: ghlConfig.siteName,
+      stateName: stateData.name,
+      priceDollars,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      dateOfBirth: body.dateOfBirth,
+      addressLine1: body.addressLine1,
+      addressLine2: body.addressLine2,
+      city: body.city,
+      postalCode: body.postalCode,
+      conditions: body.conditions,
+      otherCondition: body.conditions.includes("Other")
+        ? body.otherCondition
+        : "",
+      details: body.details,
+      medications: body.medications,
+      duration: body.duration,
+      frequency: body.frequency,
+      hasSeenDoctor: body.hasSeenDoctor,
+      hasTintedBefore: body.hasTintedBefore,
+      currentTintPercent: body.currentTintPercent,
+      isLicensedDriver: body.isLicensedDriver,
+      isIntendedDriver: body.isIntendedDriver,
+      numberOfVehicles: body.numberOfVehicles,
+      timeZone: body.timeZone,
+      howDidYouHear: body.howDidYouHear,
+      docUploadChoice: body.docUploadChoice,
+    });
+
+    // Every $250+ application must have either current-application document
+    // proof or a confirmed per-opportunity Tory alert before the browser gets
+    // a token that can upload or open Stripe. This includes "upload now": the
+    // alert is the abandonment safety net and the applicant may still upload
+    // immediately afterward. A legacy/retry application with this exact
+    // opportunity's server-written upload marker does not need a new alert.
+    let currentApplicationDocsConfirmed = false;
+    if (requiresDocs) {
+      try {
+        currentApplicationDocsConfirmed = await contactHasTag(
+          contactId,
+          opportunityLifecycleTag(GHL_TAGS.docsUploaded, opportunityId)
+        );
+      } catch {
+        // A failed marker read is not proof. Fail toward the notification path.
+        console.error("Current-application document marker read failed");
+      }
     }
-    // SERVER-SIDE price lookup — the authoritative source of truth. We never
-    // trust a client-sent amount for the charge.
-    stage = "price-lookup";
-    const stateData = getStateBySlug(body.stateSlug);
-    if (!stateData || !stateData.offered || !stateData.price || stateData.price <= 0) {
-      return NextResponse.json(
-        {
-          error:
-            "We don't currently offer online exemption service for that state. Please contact support.",
-          stage,
-        },
-        { status: 400 }
-      );
-    }
-    const priceDollars = stateData.price;
-    // Keep the displayed state name consistent with our data.
-    body.state = stateData.name;
 
-    stage = "env-check";
-    const missingEnv: string[] = [];
-    if (!GHL_API_KEY) missingEnv.push("GHL_API_KEY");
-    if (!GHL_LOCATION_ID) missingEnv.push("GHL_LOCATION_ID");
-    if (!GHL_PIPELINE_ID) missingEnv.push("GHL_PIPELINE_ID");
-    if (missingEnv.length > 0) {
-      console.error("submit-order missing env:", missingEnv);
-      throw new StageError(
-        "env-check",
-        "Server is not fully configured. Please contact support.",
-        `missing: ${missingEnv.join(", ")}`
+    let notificationQueued = false;
+    let workflowQueued = false;
+    if (requiresDocs && !currentApplicationDocsConfirmed) {
+      const notification = await routeMissingDocsLead(
+        contactId,
+        opportunityId,
+        stateData.name,
+        priceDollars
       );
+      notificationQueued = notification.emailQueued;
+      workflowQueued = notification.workflowQueued;
+      if (!notificationQueued) {
+        return NextResponse.json(
+          {
+            saved: true,
+            retryable: true,
+            error:
+              "Your application is saved, but secure follow-up is still being confirmed. Complete the security check and try once more. No payment was taken.",
+          },
+          { status: 503, headers: { "Retry-After": "3" } }
+        );
+      }
     }
 
-    // Whether this order must have medical docs before we can take payment.
-    const requiresDocs = priceDollars >= DOCS_REQUIRED_MIN_PRICE;
+    const orderToken = issueOrderToken(
+      {
+        contactId,
+        opportunityId,
+        stateSlug: stateData.slug,
+        stateName: stateData.name,
+        priceDollars,
+        siteName: ghlConfig.siteName,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        email: body.email,
+        phone: body.phone,
+      },
+      `${ghlConfig.siteName}:${stateData.slug}:${submissionReference}:${opportunityId}`
+    );
 
-    // Upsert the GHL contact FIRST. The lead is ALWAYS captured here — even a
-    // $250+ applicant who never uploads docs becomes a contact we can follow up
-    // with. Payment is a separate, gated step in /api/create-checkout.
-    stage = "ghl-contact";
-    const contactId = await findOrCreateContact(body);
-
-    // Opportunity creation IS best-effort.
-    stage = "ghl-opportunity";
-    let opportunityId: string | undefined;
-    try {
-      opportunityId = await createOpportunity(contactId, body, priceDollars);
-    } catch (oppErr) {
-      console.error("GHL opportunity creation failed:", oppErr);
+    // "Upload later" remains a saved, unpaid lead. "Upload now" receives the
+    // token only after the alert above and may proceed through the secure upload.
+    if (requiresDocs && body.docUploadChoice === "later") {
+      return NextResponse.json({
+        success: true,
+        blocked: true,
+        requiresDocs: true,
+        notificationQueued,
+        workflowQueued,
+        orderToken,
+        message:
+          "Your application is saved. No payment was taken. Our team will contact you about acceptable medical documentation.",
+      });
     }
 
     return NextResponse.json({
       success: true,
-      contactId,
-      opportunityId,
       requiresDocs,
-      price: priceDollars,
+      notificationQueued: requiresDocs
+        ? notificationQueued || currentApplicationDocsConfirmed
+        : undefined,
+      orderToken,
     });
-  } catch (err) {
-    console.error(`Submit order error at stage=${stage}:`, err);
-    const isStageErr = err instanceof StageError;
-    const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+  } catch {
+    console.error("Application CRM save failed");
     return NextResponse.json(
       {
-        error: message,
-        stage: isStageErr ? err.stage : stage,
-        detail: isStageErr ? err.detail : undefined,
+        error:
+          "We could not finish saving your application. No payment was taken. Please try again or contact support.",
       },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

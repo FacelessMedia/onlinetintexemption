@@ -1,5 +1,6 @@
-// Qualifying medical conditions — matches GHL custom field "Medical Issues".
-// All conditions qualify for preapproval. User can add more later.
+// Screening condition/symptom categories — matches the GHL custom field
+// "Medical Issues". Selecting one only permits the intake to continue; it is
+// not clinical approval, a diagnosis, or a legal determination.
 export const qualifyingConditions = [
   "Migraines",
   "Psoriatic Arthritis",
@@ -54,17 +55,19 @@ export const timeZoneOptions = [
   "Eastern Time",
 ] as const;
 
-// Required documentation list for Step 2
+// General documentation examples for Step 2. Actual requirements vary by
+// state and reviewing provider, so this list must not imply approval.
 export const requiredDocumentation = [
   {
-    title: "Medical Records or Doctor's Note",
+    title: "Medical record, visit summary, or provider letter",
     description:
-      "Documentation from your physician, ophthalmologist, dermatologist, or specialist that confirms your qualifying condition. This is the only document required — do NOT upload a driver's license, ID, or vehicle information.",
+      "A document is generally useful when it includes your name, the treating professional or facility, and the relevant condition, symptoms, treatment, or surgery. Do not upload a driver's license, ID, vehicle registration, or unrelated image as medical proof.",
   },
 ] as const;
 
-// Prequalification gate logic
-export interface PrequalificationAnswers {
+// Initial intake screen. The independent reviewing provider makes every
+// clinical decision after reviewing the intake and any documentation.
+export interface InitialScreeningAnswers {
   conditions: string[];
   duration: string;
   frequency: string;
@@ -73,13 +76,13 @@ export interface PrequalificationAnswers {
   hasSeenDoctor: string;
 }
 
-export function isPrequalified(answers: PrequalificationAnswers): {
-  qualified: boolean;
+export function passesInitialScreening(answers: InitialScreeningAnswers): {
+  canContinue: boolean;
   reason?: string;
 } {
   if (answers.conditions.length === 0) {
     return {
-      qualified: false,
+      canContinue: false,
       reason:
         "You must select at least one qualifying medical condition to proceed.",
     };
@@ -87,7 +90,7 @@ export function isPrequalified(answers: PrequalificationAnswers): {
 
   if (answers.isLicensedDriver !== "Yes") {
     return {
-      qualified: false,
+      canContinue: false,
       reason:
         "You must be a licensed driver to apply for a window tint medical exemption.",
     };
@@ -95,11 +98,11 @@ export function isPrequalified(answers: PrequalificationAnswers): {
 
   if (answers.isIntendedDriver !== "Yes") {
     return {
-      qualified: false,
+      canContinue: false,
       reason:
         "You must be the intended driver or primary passenger of the vehicle.",
     };
   }
 
-  return { qualified: true };
+  return { canContinue: true };
 }

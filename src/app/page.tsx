@@ -17,16 +17,16 @@ import { getAllStates } from "@/data/states";
 import { USMap } from "@/components/us-map";
 
 export const metadata: Metadata = {
-  title: "Medical Window Tint Exemption Online | All 50 States | Online Tint Exemption",
+  title: "Medical Window Tint Exemption Information & Intake | Online Tint Exemption",
   description:
-    "Get your legal medical window tint exemption online from a licensed physician. Fast 24-48 hour approval, 100% money-back guarantee. Serving 32 states + DC. Pricing from $225.",
+    "Review state-specific medical window tint information and begin a secure intake coordinated with MyEyeRx and independent licensed clinicians. Pricing starts at $225.",
   keywords: [
     "medical window tint exemption",
     "window tint medical exemption online",
     "tint exemption certificate",
     "medical tint permit",
     "window tint prescription",
-    "tint exemption all 50 states",
+    "state window tint exemption requirements",
     "legal window tint exemption",
     "photosensitivity tint exemption",
     "lupus window tint",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Medical Window Tint Exemption Online | Online Tint Exemption",
     description:
-      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, 32 states + DC, from $225.",
+      "State-specific medical window tint education and secure intake coordinated with MyEyeRx and independent licensed clinicians.",
     url: "https://www.onlinetintexemption.com",
     siteName: "Online Tint Exemption",
     type: "website",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Medical Window Tint Exemption Online | Online Tint Exemption",
     description:
-      "Get your legal medical window tint exemption from a licensed physician. Fast 24-48hr approval, all 50 states.",
+      "State-specific medical window tint education and secure intake coordinated with MyEyeRx and independent licensed clinicians.",
   },
   robots: {
     index: true,
@@ -74,52 +74,52 @@ const steps = [
     icon: FileCheck,
     title: "Complete Intake Form",
     description:
-      "Answer a few simple questions about your medical condition. Takes about 5 minutes.",
+      "Answer a short set of questions about your symptoms and medical history.",
   },
   {
     icon: Phone,
-    title: "Phone Consultation",
+    title: "MyEyeRx Coordination",
     description:
-      "Brief 10-15 minute call with a licensed physician to evaluate your condition.",
+      "MyEyeRx coordinates consultation booking, referrals, and any needed follow-up.",
   },
   {
     icon: Mail,
-    title: "Receive Certificate",
+    title: "Independent Clinical Review",
     description:
-      "Get your signed medical exemption certificate via email within 24-48 hours.",
+      "An appropriately licensed independent clinician makes the clinical decision and may request more information.",
   },
 ];
 
 const trustFeatures = [
   {
     icon: Shield,
-    title: "100% Money-Back Guarantee",
+    title: "Clear Documentation Rules",
     description:
-      "Bring legitimate proof of your medical condition. If our physician determines you don't qualify, you'll receive a full refund. No questions asked.",
+      "Requirements vary by state. Useful records generally identify you, the treating professional or facility, and the relevant condition or treatment.",
   },
   {
     icon: Clock,
-    title: "Fast 24-48 Hour Approval",
+    title: "No False Approval Promise",
     description:
-      "Get your medical tint exemption certificate delivered to your email within 1-2 business days.",
+      "Screening and intake are not approval. Timing depends on documentation, provider review, and state requirements.",
   },
   {
     icon: Stethoscope,
-    title: "Licensed Physicians",
+    title: "Independent Licensed Clinicians",
     description:
-      "All consultations are conducted by board-certified physicians licensed in your state.",
+      "Clinical decisions are made by independent, appropriately licensed physicians or optometrists—not by this website.",
   },
   {
     icon: BadgeCheck,
-    title: "Legally Valid Documentation",
+    title: "State-Specific Guidance",
     description:
-      "Your exemption certificate meets all state requirements and is accepted by law enforcement.",
+      "State rules differ and can change. Confirm final filing, vehicle, and enforcement requirements with the relevant authority.",
   },
   {
     icon: CheckCircle,
-    title: "Hundreds of Happy Customers",
+    title: "MyEyeRx Partnership",
     description:
-      "We've helped hundreds of people across all 50 states get their legal tint exemptions.",
+      "MyEyeRx is the official partner for consultation booking, referrals, and administrative follow-up.",
   },
   {
     icon: HeadsetIcon,
@@ -132,35 +132,35 @@ const trustFeatures = [
 const faqItems = [
   {
     q: "What medical conditions qualify for a tint exemption?",
-    a: "Common qualifying conditions include lupus, photosensitivity, melanoma/skin cancer history, migraines, albinism, cataracts, macular degeneration, and various eye conditions that cause light sensitivity. During your consultation, our licensed physician will evaluate your specific condition to determine if you qualify.",
+    a: "Light-sensitive symptoms and medical histories vary. Selecting a condition only allows you to continue an initial screening; an independent licensed clinician makes the final clinical decision under the applicable state rules.",
   },
   {
     q: "How long does the process take?",
-    a: "Most customers receive their medical tint exemption certificate within 24-48 hours of completing their phone consultation. The initial intake form takes about 5 minutes, and the phone consultation is typically 10-15 minutes.",
+    a: "Timing varies with document completeness, provider availability, and state-specific requirements. MyEyeRx will contact you if more information is needed; no approval or delivery time is guaranteed.",
   },
   {
     q: "Do I need to visit a doctor in person?",
-    a: "No. The entire process is done remotely. You'll complete an online intake form and then have a brief phone consultation with a licensed physician. There's no need to leave your home.",
+    a: "The intake starts online. The reviewing provider determines the appropriate consultation and whether any additional or in-person care is needed.",
   },
   {
     q: "What if I don't qualify?",
-    a: "We offer a 100% money-back guarantee. If our physician determines that you don't qualify for a medical tint exemption based on your condition, you'll receive a full refund. No questions asked.",
+    a: "Qualification is not guaranteed. Review the current refund policy before purchase or contact MyEyeRx at 734-338-9453 for an answer about your specific situation.",
   },
   {
     q: "Is a medical tint exemption legal?",
-    a: "Yes, medical exemptions for window tinting are legal in most states when properly documented by a licensed physician. Your exemption certificate serves as legal proof of your medical need and is accepted by law enforcement.",
+    a: "Many jurisdictions have a medical-exemption process, but the rules, forms, windows, filing steps, and enforcement treatment vary. Confirm current requirements with the relevant state authority. This site does not provide legal advice or guarantee acceptance.",
   },
   {
     q: "How dark can I tint my windows?",
-    a: "The allowed tint level varies by state and depends on your specific medical condition. Your physician will specify the appropriate darkness level on your exemption certificate based on your medical needs and state regulations.",
+    a: "Do not assume an exemption permits any particular tint percentage or window. Follow the reviewing clinician's documentation and the current rules of the relevant state authority and law enforcement.",
   },
   {
     q: "Do I need to register with the DMV?",
-    a: "This depends on your state. Some states require DMV registration, while others only require you to carry the prescription in your vehicle. We'll provide detailed instructions for your specific state's requirements.",
+    a: "This depends on the state and can change. Use the current instructions from the relevant agency; MyEyeRx can help you understand the next administrative step after review.",
   },
   {
     q: "Is my information secure?",
-    a: "Absolutely. We use bank-level encryption to protect your personal and medical information. Your data is never shared with third parties and all consultations are completely confidential.",
+    a: "The intake uses access controls, upload validation, and Stripe-hosted card entry. Personal information is shared only as described in the Privacy Policy, including with service providers needed to process the intake. No online system can promise absolute security.",
   },
 ];
 
@@ -169,14 +169,14 @@ export default function Home() {
 
   const organizationSchema = {
     "@context": "https://schema.org",
-    "@type": "MedicalBusiness",
+    "@type": "Organization",
     name: "Online Tint Exemption",
     url: "https://www.onlinetintexemption.com",
     logo: "https://www.onlinetintexemption.com/logo.png",
     description:
-      "Licensed telemedicine service providing medical window tint exemption certificates for all 50 US states.",
-    telephone: "+1-734-338-8453",
-    email: "support@onlinetintexemption.com",
+      "State-specific education and secure intake for medical window tint exemption reviews, officially partnered with MyEyeRx.",
+    telephone: "+1-734-338-9453",
+    email: "Tory@myeyerx.net",
     founder: {
       "@type": "Person",
       name: "Toriano Dewberry",
@@ -186,25 +186,23 @@ export default function Home() {
       "@type": "PostalAddress",
       addressCountry: "US",
     },
-    areaServed: {
-      "@type": "Country",
-      name: "United States",
-    },
+    areaServed: getAllStates().map((state) => ({
+      "@type": "State",
+      name: state.name,
+    })),
     priceRange: "$225–$350",
     sameAs: [],
   };
 
   const serviceSchema = {
     "@context": "https://schema.org",
-    "@type": "MedicalProcedure",
-    name: "Medical Window Tint Exemption Consultation",
+    "@type": "Service",
+    name: "Medical Window Tint Exemption Intake Coordination",
     description:
-      "Online telemedicine consultation with a licensed physician to obtain a medical window tint exemption certificate.",
-    howPerformed:
-      "Remote telemedicine consultation via phone with a board-certified physician.",
-    procedureType: "https://schema.org/NoninvasiveProcedure",
+      "State-specific education, secure intake, document collection, and consultation coordination through MyEyeRx.",
+    serviceType: "Medical window tint exemption intake coordination",
     provider: {
-      "@type": "MedicalBusiness",
+      "@type": "Organization",
       name: "Online Tint Exemption",
       url: "https://www.onlinetintexemption.com",
     },
@@ -275,19 +273,20 @@ export default function Home() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
           <div className="max-w-3xl">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-              Get Your Medical Window Tint Exemption{" "}
-              <span className="text-primary">Online</span>
+              Medical Window Tint Exemption{" "}
+              <span className="text-primary">Information &amp; Intake</span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl">
-              Skip the in-person visits. Get your legal tint exemption
-              certificate from a licensed physician in as little as 24 hours.
+              Review state-specific guidance and begin a secure intake. MyEyeRx
+              coordinates consultation booking and referrals; an independent
+              licensed clinician makes any clinical decision.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Link
                 href="/book"
                 className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Get Your Exemption Now
+                Start Secure Intake
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Link>
               <a
@@ -316,11 +315,11 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-card-foreground">
-              How to Get Your Medical Tint Exemption
+              How the Intake and Review Process Works
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our streamlined process makes it easy to get your legal window
-              tint exemption without leaving home.
+              The process begins online. Documentation, consultation format,
+              timing, and state filing steps depend on your situation.
             </p>
           </div>
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

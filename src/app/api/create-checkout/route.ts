@@ -1,185 +1,266 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStateBySlug } from "@/data/states";
-import { createStripeCheckoutSession } from "@/lib/stripe-checkout";
-import { createHostedCheckoutSession } from "@/lib/clover-checkout";
+import { requiresDocumentsForPrice } from "@/lib/docs-policy";
 import {
   addTagToContact,
   contactHasDocs,
-  moveOpportunityStage,
   ghlConfig,
   GHL_TAGS,
+  routeMissingDocsLead,
 } from "@/lib/ghl";
+import { verifyOrderToken } from "@/lib/order-token";
+import { verifyUploadReceipt } from "@/lib/upload-receipt";
+import {
+  checkRateLimit,
+  getCanonicalOrigin,
+  getClientIp,
+  isSameOriginRequest,
+  readBoundedJson,
+  RequestBodyError,
+  securityConfigurationErrors,
+} from "@/lib/request-security";
+import { createStripeCheckoutSession } from "@/lib/stripe-checkout";
+import {
+  createCheckoutSchema,
+  firstValidationError,
+} from "@/lib/validation";
 
 export const runtime = "nodejs";
 
-// Which processor to use. Default stays "clover" so flipping to Stripe (and
-// rolling back) is a single env change with zero code deploy.
-const PAYMENT_PROVIDER = (process.env.PAYMENT_PROVIDER || "clover").toLowerCase();
+const sleep = (milliseconds: number) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-// $250+ orders may not pay until medical docs are on the contact. Configurable
-// so the threshold can change without a code edit.
-const DOCS_REQUIRED_MIN_PRICE = Number(process.env.DOCS_REQUIRED_MIN_PRICE || "250");
-
-function isTestMode(): boolean {
-  return (
-    PAYMENT_PROVIDER === "stripe"
-      ? process.env.STRIPE_TEST_MODE
-      : process.env.CLOVER_TEST_MODE
-  ) === "true";
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-interface CreateCheckoutBody {
-  contactId: string;
-  opportunityId?: string;
-  stateSlug: string;
-  // Client hint only — the server re-verifies docs against GHL. Used solely to
-  // decide whether a short retry for read-consistency is worthwhile.
-  docsUploaded?: boolean;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
+function pendingDocumentConfirmation() {
+  return NextResponse.json(
+    {
+      pending: true,
+      retryable: true,
+      message:
+        "Your document was received and is still being confirmed. We are retrying secure payment setup.",
+    },
+    { status: 202, headers: { "Retry-After": "2" } }
+  );
 }
 
 export async function POST(request: NextRequest) {
-  let stage = "start";
+  const securityErrors = securityConfigurationErrors("checkout");
+  if (securityErrors.length > 0) {
+    console.error("Strict security configuration is incomplete:", securityErrors);
+    return NextResponse.json({ error: "Secure payment is temporarily unavailable." }, { status: 503 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+  const ip = getClientIp(request);
+  let ipRate: Awaited<ReturnType<typeof checkRateLimit>>;
   try {
-    stage = "parse-body";
-    const body: CreateCheckoutBody = await request.json();
+    ipRate = await checkRateLimit(`checkout-ip:${ip}`, 10, 60 * 60);
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!ipRate.allowed) {
+    return NextResponse.json(
+      { error: "Too many payment attempts. Please wait or contact support." },
+      { status: 429, headers: { "Retry-After": String(ipRate.retryAfter) } }
+    );
+  }
 
-    stage = "validate";
-    if (!body.contactId || !body.stateSlug) {
-      return NextResponse.json(
-        { error: "Missing contact or state reference.", stage },
-        { status: 400 }
-      );
-    }
+  let rawBody: unknown;
+  try {
+    rawBody = await readBoundedJson(request, 8 * 1024);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    const message = status === 413
+      ? "Request is too large."
+      : status === 415
+        ? "Content-Type must be application/json."
+        : "Invalid request.";
+    return NextResponse.json({ error: message }, { status });
+  }
+  const parsed = createCheckoutSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: firstValidationError(parsed.error) },
+      { status: 400 }
+    );
+  }
 
-    // Authoritative server-side price lookup — the client never dictates amount.
-    stage = "price-lookup";
-    const stateData = getStateBySlug(body.stateSlug);
-    if (!stateData || !stateData.offered || !stateData.price || stateData.price <= 0) {
-      return NextResponse.json(
-        { error: "We don't currently offer online exemption service for that state.", stage },
-        { status: 400 }
-      );
-    }
-    const priceDollars = stateData.price;
-    const stateName = stateData.name;
+  let order;
+  try {
+    order = verifyOrderToken(parsed.data.orderToken);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid order session";
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+  if (order.siteName !== ghlConfig.siteName) {
+    return NextResponse.json({ error: "Invalid order session." }, { status: 401 });
+  }
 
-    // ---- Payment gate: $250+ requires medical docs on the contact ----
-    stage = "doc-gate";
-    const requiresDocs = priceDollars >= DOCS_REQUIRED_MIN_PRICE;
-    if (requiresDocs) {
-      let hasDocs = await contactHasDocs(body.contactId);
-      // GHL custom-field writes can lag a beat behind the upload response. If the
-      // client just uploaded, retry once before deciding there are no docs.
-      if (!hasDocs && body.docsUploaded) {
-        await sleep(800);
-        hasDocs = await contactHasDocs(body.contactId);
+  let orderRate: Awaited<ReturnType<typeof checkRateLimit>>;
+  try {
+    // Multiple calls may be the same order polling GHL propagation. Stripe's
+    // idempotency key still guarantees only one hosted Checkout Session.
+    orderRate = await checkRateLimit(`checkout-order:${order.jti}`, 8, 60 * 60);
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!orderRate.allowed) {
+    return NextResponse.json(
+      { error: "A payment session already exists for this application." },
+      { status: 429, headers: { "Retry-After": String(orderRate.retryAfter) } }
+    );
+  }
+
+  const state = getStateBySlug(order.stateSlug);
+  if (
+    !state?.offered ||
+    !state.price ||
+    state.price <= 0 ||
+    state.name !== order.stateName ||
+    state.price !== order.priceDollars
+  ) {
+    return NextResponse.json(
+      { error: "This application no longer matches the current state offering. Please restart." },
+      { status: 409 }
+    );
+  }
+
+  try {
+    const requiresDocs = requiresDocumentsForPrice(state.price);
+    let receiptConfirmed = false;
+    if (parsed.data.uploadReceipt) {
+      try {
+        verifyUploadReceipt(parsed.data.uploadReceipt, {
+          orderJti: order.jti,
+          contactId: order.contactId,
+          siteName: order.siteName,
+        });
+        receiptConfirmed = true;
+      } catch {
+        receiptConfirmed = false;
       }
-      if (!hasDocs) {
-        // Lead is already saved (submit-order). Park them for human follow-up
-        // and DO NOT take payment.
-        await addTagToContact(body.contactId, GHL_TAGS.needsDocs).catch(() => {});
-        if (body.opportunityId && ghlConfig.stageNeedsDocs) {
-          await moveOpportunityStage(body.opportunityId, ghlConfig.stageNeedsDocs).catch(() => {});
-        }
+    }
+
+    if (requiresDocs && !receiptConfirmed) {
+      const notification = await routeMissingDocsLead(
+        order.contactId,
+        order.opportunityId,
+        state.name,
+        state.price
+      );
+      if (!notification.emailQueued) {
         return NextResponse.json(
           {
-            blocked: true,
-            requiresDocs: true,
+            pending: true,
+            retryable: true,
             message:
-              "Your application is saved. We can only process payment once we receive your medical documentation — check your email for upload instructions, or reply with your documents.",
+              "Your application is saved, but secure document follow-up is still being confirmed. No payment was taken.",
           },
-          { status: 200 }
+          { status: 202, headers: { "Retry-After": "3" } }
         );
+      }
+      return NextResponse.json({
+        blocked: true,
+        requiresDocs: true,
+        notificationQueued: notification.emailQueued,
+        workflowQueued: notification.workflowQueued,
+        message:
+          "Your application is saved. No payment was taken. Our team will contact you about acceptable medical documentation.",
+      });
+    }
+
+    // For $225, the signed receipt is enough to classify this submission as
+    // "Paid - Docs Submitted": it is issued only after GHL accepts this order's
+    // upload. A GHL read outage must never block the allowed $225 payment path.
+    // For $250+, also observe the real FILE_UPLOAD field before opening Stripe.
+    let hasDocs = receiptConfirmed && !requiresDocs;
+    if (receiptConfirmed && requiresDocs) {
+      try {
+        hasDocs = await contactHasDocs(order.contactId);
+        if (!hasDocs) {
+        // GHL can be briefly eventually consistent after upload. Poll, but
+        // never trust the browser or receipt alone as proof of the stored file.
+          for (const delay of [500, 1_000, 1_500]) {
+            await sleep(delay);
+            hasDocs = await contactHasDocs(order.contactId);
+            if (hasDocs) break;
+          }
+        }
+      } catch {
+        return pendingDocumentConfirmation();
       }
     }
 
-    // ---- Create the hosted checkout session (Stripe or Clover) ----
-    stage = "checkout";
-    const amount = isTestMode() ? (Number(process.env.STRIPE_TEST_AMOUNT_CENTS) || 100) : priceDollars * 100;
-    const productName = `${stateName} Tint Exemption${isTestMode() ? " [TEST]" : ""}`;
-
-    const metadata: Record<string, string> = {
-      source_system: "tint-exemption-sites",
-      // Derived from the request host so this file is identical across every
-      // site (no per-domain hardcoding). Informational metadata only.
-      site: request.headers.get("host") || "",
-      ghl_synced: "true",
-      state: stateName,
-      state_slug: body.stateSlug,
-      email: body.email || "",
-      site_name: ghlConfig.siteName,
-      customer_name: [body.firstName, body.lastName].filter(Boolean).join(" "),
-      ghl_contact_id: body.contactId,
-      docs: requiresDocs ? "yes" : (body.docsUploaded ? "yes" : "no"),
-    };
-    if (body.opportunityId) metadata.ghl_opportunity_id = body.opportunityId;
-
-    let checkoutUrl: string;
-    let checkoutSessionId: string;
-
-    if (PAYMENT_PROVIDER === "stripe") {
-      const origin =
-        request.headers.get("origin") ||
-        (request.headers.get("host") ? `https://${request.headers.get("host")}` : "");
-      const session = await createStripeCheckoutSession({
-        productName,
-        amountCents: amount,
-        customer: {
-          firstName: body.firstName,
-          lastName: body.lastName,
-          email: body.email,
-          phoneNumber: body.phone,
-        },
-        metadata,
-        successUrl: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${origin}/book/${body.stateSlug}`,
-      });
-      checkoutUrl = session.href;
-      checkoutSessionId = session.checkoutSessionId;
-    } else {
-      const session = await createHostedCheckoutSession({
-        productName,
-        amountCents: amount,
-        customer: {
-          firstName: body.firstName,
-          lastName: body.lastName,
-          email: body.email,
-          phoneNumber: body.phone,
-        },
-        metadata,
-      });
-      checkoutUrl = session.href;
-      checkoutSessionId = session.checkoutSessionId;
+    if (requiresDocs && receiptConfirmed && !hasDocs) {
+      // A valid fresh-upload receipt means this is propagation delay, not a
+      // no-document lead. Let the browser retry this same signed order.
+      return pendingDocumentConfirmation();
     }
 
-    // Best-effort: mark that the buyer reached payment. The webhook flips this
-    // to "paid" once Stripe (or the Clover reconciler) confirms settlement.
-    stage = "ghl-tag";
-    await addTagToContact(body.contactId, GHL_TAGS.checkoutStarted).catch(() => {});
+    const hasCurrentSubmissionDocs = receiptConfirmed && hasDocs;
+
+    const canonicalOrigin = getCanonicalOrigin();
+    const metadata: Record<string, string> = {
+      source_system: "tint-exemption-sites",
+      site: new URL(canonicalOrigin).hostname,
+      site_name: ghlConfig.siteName,
+      state: state.name,
+      state_slug: state.slug,
+      ghl_contact_id: order.contactId,
+      ghl_opportunity_id: order.opportunityId,
+      docs: hasCurrentSubmissionDocs ? "yes" : "no",
+      docs_current_submission: hasCurrentSubmissionDocs ? "yes" : "no",
+      order_jti: order.jti,
+    };
+
+    const session = await createStripeCheckoutSession({
+      productName: `${state.name} Tint Exemption`,
+      amountCents: state.price * 100,
+      customer: {
+        firstName: order.firstName,
+        lastName: order.lastName,
+        email: order.email,
+        phoneNumber: order.phone,
+      },
+      metadata,
+      clientReferenceId: order.contactId,
+      idempotencyKey: `tint-order-${order.jti}`,
+      successUrl: `${canonicalOrigin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${canonicalOrigin}/book/${state.slug}`,
+    });
+
+    try {
+      await addTagToContact(order.contactId, GHL_TAGS.checkoutStarted);
+    } catch {
+      // The hosted URL is already created and is the authoritative result. A
+      // noncritical lifecycle tag must never hide it and tempt the customer to
+      // create another cart.
+      console.error("Post-checkout GHL tag operation failed");
+    }
 
     return NextResponse.json({
       success: true,
-      checkoutUrl,
-      checkoutSessionId,
-      amount,
-      provider: PAYMENT_PROVIDER,
+      checkoutUrl: session.href,
+      checkoutSessionId: session.checkoutSessionId,
+      amount: state.price * 100,
+      provider: "stripe",
     });
-  } catch (err) {
-    console.error(`create-checkout error at stage=${stage}:`, err);
-    const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+  } catch {
+    // Stripe/provider error objects can contain request and customer metadata.
+    // Keep logs deliberately generic.
+    console.error("Secure checkout creation failed");
     return NextResponse.json(
       {
-        error: "We couldn't start secure payment. Please try again or contact support.",
-        stage,
-        detail: message.slice(0, 400),
+        error:
+          "We could not start secure payment. No payment was taken. Please try again or contact support.",
       },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

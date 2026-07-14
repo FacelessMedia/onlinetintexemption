@@ -1,42 +1,41 @@
 import type { MetadataRoute } from "next";
-import { getAllStateSlugs } from "@/data/states";
+import { getOfferedStates } from "@/data/states";
 import { getAllConditionSlugs } from "@/data/conditions";
-import { getAllBlogSlugs } from "@/data/blog";
+import { publishedBlogPosts } from "@/data/blog";
 
 const BASE = "https://www.onlinetintexemption.com";
+const CONTENT_REVIEWED = "2026-07-14";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date().toISOString();
-
   const staticPages: MetadataRoute.Sitemap = [
-    { url: BASE, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
-    { url: `${BASE}/conditions`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE}/about/toriano-dewberry`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE}/about/dr-b`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE}/privacy-policy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: BASE, lastModified: CONTENT_REVIEWED, changeFrequency: "weekly", priority: 1.0 },
+    { url: `${BASE}/conditions`, lastModified: CONTENT_REVIEWED, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/about`, lastModified: CONTENT_REVIEWED, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE}/about/toriano-dewberry`, lastModified: CONTENT_REVIEWED, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${BASE}/about/clinical-providers`, lastModified: CONTENT_REVIEWED, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${BASE}/blog`, lastModified: CONTENT_REVIEWED, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${BASE}/faq`, lastModified: CONTENT_REVIEWED, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE}/contact`, lastModified: CONTENT_REVIEWED, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE}/privacy-policy`, lastModified: CONTENT_REVIEWED, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const statePages: MetadataRoute.Sitemap = getAllStateSlugs().map((slug) => ({
-    url: `${BASE}/${slug}-window-tint-medical-exemption`,
-    lastModified: now,
+  const statePages: MetadataRoute.Sitemap = getOfferedStates().map((state) => ({
+    url: `${BASE}/${state.slug}-window-tint-medical-exemption`,
+    lastModified: CONTENT_REVIEWED,
     changeFrequency: "monthly",
     priority: 0.9,
   }));
 
   const conditionPages: MetadataRoute.Sitemap = getAllConditionSlugs().map((slug) => ({
     url: `${BASE}/conditions/${slug}`,
-    lastModified: now,
+    lastModified: CONTENT_REVIEWED,
     changeFrequency: "monthly",
     priority: 0.8,
   }));
 
-  const blogPages: MetadataRoute.Sitemap = getAllBlogSlugs().map((slug) => ({
-    url: `${BASE}/blog/${slug}`,
-    lastModified: now,
+  const blogPages: MetadataRoute.Sitemap = publishedBlogPosts().map((post) => ({
+    url: `${BASE}/blog/${post.slug}`,
+    lastModified: post.dateModified || post.datePublished || post.date,
     changeFrequency: "monthly",
     priority: 0.6,
   }));

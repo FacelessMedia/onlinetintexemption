@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Clock } from "lucide-react";
-import { blogPosts } from "@/data/blog";
+import { publishedBlogPosts } from "@/data/blog";
 
 export const metadata: Metadata = {
   title: "Toriano Dewberry - Founder & Licensed Optician",
@@ -10,7 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function TorianoDewberryPage() {
-  const articles = blogPosts.filter((p) => p.authorSlug === "toriano-dewberry");
+  const articles = publishedBlogPosts().filter(
+    (post) =>
+      post.author === "Toriano Dewberry" &&
+      post.authorSlug === "toriano-dewberry"
+  );
 
   return (
     <>
@@ -36,7 +40,7 @@ export default function TorianoDewberryPage() {
                     Toriano Dewberry
                   </h1>
                   <p className="mt-1 text-lg text-primary font-medium">
-                    Founder & Licensed Optician & CEO
+                    Founder and Licensed Optician
                   </p>
                 </div>
               </div>
@@ -46,9 +50,11 @@ export default function TorianoDewberryPage() {
                   About Toriano Dewberry
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  Licensed optician and founder of Online Tint Exemption,
-                  dedicated to helping light-sensitive patients get the relief
-                  they deserve through accessible telemedicine solutions.
+                  Toriano Dewberry is a licensed optician and the founder of
+                  Online Tint Exemption. He supports consumer education and the
+                  administrative intake experience. He is not presented here as
+                  the physician or optometrist who makes an applicant&apos;s clinical
+                  decision.
                 </p>
               </section>
 
@@ -61,7 +67,7 @@ export default function TorianoDewberryPage() {
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
                     <div className="h-2 w-2 rounded-full bg-primary" />
-                    Founder & CEO, Online Tint Exemption
+                    Founder, Online Tint Exemption
                   </li>
                 </ul>
               </section>
@@ -112,13 +118,13 @@ export default function TorianoDewberryPage() {
                   <h3 className="font-semibold text-card-foreground mb-3">Our Team</h3>
                   <div className="space-y-3">
                     <Link
-                      href="/about/dr-b"
+                      href="/about/clinical-providers"
                       className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
-                        DB
+                        CP
                       </div>
-                      Dr. B — Medical Director
+                      How clinical review works
                     </Link>
                     <Link
                       href="/about"
@@ -138,12 +144,11 @@ export default function TorianoDewberryPage() {
       <section className="bg-card py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl font-bold text-card-foreground">
-            Trusted by Thousands of Patients
+            Clear roles and responsible review
           </h2>
           <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">
-            Our team of licensed professionals is dedicated to helping
-            light-sensitive patients get the relief they need through legal
-            medical exemptions.
+            MyEyeRx coordinates booking and referrals. Independent licensed
+            providers make clinical decisions, and no outcome is guaranteed.
           </p>
           <Link
             href="/book"

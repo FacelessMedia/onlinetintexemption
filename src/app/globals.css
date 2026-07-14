@@ -53,43 +53,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
 }
 
 * {
   border-color: var(--border);
-}
-
-/* -----------------------------------------------------------
- * Clover iframe payment fields
- * The Clover SDK injects an <iframe> into each mount point. By default the
- * iframe renders at its own intrinsic height (hundreds of px). These rules
- * force the iframe to fill its parent so the fixed-height wrappers in
- * CloverPaymentFields cap the visual field height to a single line.
- * ----------------------------------------------------------- */
-#clover-card-number,
-#clover-card-date,
-#clover-card-cvv,
-#clover-card-postal-code {
-  display: block;
-  width: 100%;
-  height: 44px;
-  overflow: hidden;
-  position: relative;
-}
-
-#clover-card-number iframe,
-#clover-card-date iframe,
-#clover-card-cvv iframe,
-#clover-card-postal-code iframe {
-  width: 100% !important;
-  height: 100% !important;
-  border: 0 !important;
 }

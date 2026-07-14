@@ -1,164 +1,229 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  addTagsToContact,
+  GHL_BASE,
+  ghlConfig,
+  GHL_MEDICAL_DOCS_FIELD_ID,
+  GHL_TAGS,
+  opportunityLifecycleTag,
+  removeTagFromContact,
+} from "@/lib/ghl";
+import { detectDocumentType, scanFileForMalware } from "@/lib/malware-scan";
+import { verifyOrderToken } from "@/lib/order-token";
+import { issueUploadReceipt } from "@/lib/upload-receipt";
+import {
+  checkRateLimit,
+  getClientIp,
+  isSameOriginRequest,
+  securityConfigurationErrors,
+} from "@/lib/request-security";
 
-// HIPAA-aware document upload endpoint.
-//
-// Files are streamed straight from the browser to GoHighLevel's contact-scoped
-// custom-field upload endpoint (/forms/upload-custom-files). Each file is
-// attached directly to the customer's contact record under the FILE_UPLOAD
-// custom field "Medical Documentation" — access is gated by GHL contact-level
-// permissions, NOT a public CDN URL. The file body is held in memory by this
-// serverless function only for the duration of the request: never written to
-// disk, never logged, never persisted on Vercel.
-//
-// Because the destination is contact-scoped, this endpoint REQUIRES a valid
-// contactId for an existing GHL contact. The expected flow is:
-//   1. Customer completes payment via /api/submit-order → contact is created
-//      and contactId is returned to the browser.
-//   2. Browser uploads each medical document here, passing contactId.
-//   3. The success state in the booking form shows per-file upload status.
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
-const GHL_API_KEY = process.env.GHL_API_KEY!;
-const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID!;
-// FILE_UPLOAD custom-field ID for "Medical Documentation" on the contact.
-const GHL_MEDICAL_DOCS_FIELD_ID =
-  process.env.GHL_MEDICAL_DOCS_FIELD_ID || "OsDZ0lLR3SytKhzcup93";
-const GHL_BASE = "https://services.leadconnectorhq.com";
-
-// Vercel serverless functions cap request body at ~4.5 MB. We enforce 4 MB
-// per file so customers see a clear client-side rejection rather than an
-// opaque 413 from the platform.
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_REQUEST_BYTES = MAX_FILE_BYTES + 256 * 1024;
 
-const ALLOWED_MIME = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/heic",
-  "image/heif",
-  "image/webp",
-]);
+const MIME_BY_TYPE = {
+  pdf: new Set(["application/pdf", "application/octet-stream", ""]),
+  jpeg: new Set(["image/jpeg", "image/jpg", "application/octet-stream", ""]),
+  png: new Set(["image/png", "application/octet-stream", ""]),
+} as const;
 
 export async function POST(request: NextRequest) {
+  const securityErrors = securityConfigurationErrors("upload");
+  if (securityErrors.length > 0) {
+    console.error("Strict security configuration is incomplete:", securityErrors);
+    return NextResponse.json({ error: "Document upload is temporarily unavailable." }, { status: 503 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+  const ip = getClientIp(request);
+  let ipRate: Awaited<ReturnType<typeof checkRateLimit>>;
   try {
-    if (!GHL_API_KEY || !GHL_LOCATION_ID || !GHL_MEDICAL_DOCS_FIELD_ID) {
-      console.error(
-        "upload-doc missing env: GHL_API_KEY / GHL_LOCATION_ID / GHL_MEDICAL_DOCS_FIELD_ID"
-      );
-      return NextResponse.json(
-        { error: "File upload is not configured. Please contact support." },
-        { status: 500 }
-      );
-    }
+    ipRate = await checkRateLimit(`upload-ip:${ip}`, 15, 10 * 60);
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!ipRate.allowed) {
+    return NextResponse.json(
+      { error: "Too many uploads. Please wait before trying again." },
+      { status: 429, headers: { "Retry-After": String(ipRate.retryAfter) } }
+    );
+  }
 
-    const incoming = await request.formData();
-    const file = incoming.get("file");
-    const contactId = String(incoming.get("contactId") || "").trim();
+  const contentType = request.headers.get("content-type") || "";
+  if (!/^multipart\/form-data\s*;/i.test(contentType)) {
+    return NextResponse.json(
+      { error: "Content-Type must be multipart/form-data." },
+      { status: 415 }
+    );
+  }
+  const rawContentLength = request.headers.get("content-length") || "";
+  if (!/^\d+$/.test(rawContentLength)) {
+    return NextResponse.json(
+      { error: "A valid upload size is required." },
+      { status: 411 }
+    );
+  }
+  const contentLength = Number(rawContentLength);
+  if (
+    !Number.isSafeInteger(contentLength) ||
+    contentLength <= 0 ||
+    contentLength > MAX_REQUEST_BYTES
+  ) {
+    return NextResponse.json(
+      { error: "File is too large. Maximum size is 4 MB per file." },
+      { status: 413 }
+    );
+  }
 
-    if (!contactId) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing contact reference. Please complete checkout before uploading documents.",
-        },
-        { status: 400 }
-      );
-    }
+  if (!ghlConfig.apiKey || !ghlConfig.locationId || !GHL_MEDICAL_DOCS_FIELD_ID) {
+    console.error("upload-doc missing GHL configuration");
+    return NextResponse.json(
+      { error: "Document upload is temporarily unavailable." },
+      { status: 503 }
+    );
+  }
 
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file provided." }, { status: 400 });
-    }
+  let incoming: FormData;
+  try {
+    incoming = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
+  }
 
-    if (file.size === 0) {
-      return NextResponse.json({ error: "File is empty." }, { status: 400 });
-    }
+  const file = incoming.get("file");
+  const rawToken = String(incoming.get("orderToken") || "");
+  let order;
+  try {
+    order = verifyOrderToken(rawToken);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid order session";
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+  if (order.siteName !== ghlConfig.siteName) {
+    return NextResponse.json({ error: "Invalid order session." }, { status: 401 });
+  }
 
-    if (file.size > MAX_FILE_BYTES) {
-      return NextResponse.json(
-        { error: "File is too large. Maximum size is 4 MB per file." },
-        { status: 413 }
-      );
-    }
+  let orderRate: Awaited<ReturnType<typeof checkRateLimit>>;
+  try {
+    orderRate = await checkRateLimit(`upload-order:${order.jti}`, 8, 30 * 60);
+  } catch {
+    return NextResponse.json(
+      { error: "Security service is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
+  if (!orderRate.allowed) {
+    return NextResponse.json(
+      { error: "Upload limit reached for this application. Please contact support." },
+      { status: 429, headers: { "Retry-After": String(orderRate.retryAfter) } }
+    );
+  }
 
-    if (file.type && !ALLOWED_MIME.has(file.type)) {
-      return NextResponse.json(
-        {
-          error:
-            "Unsupported file type. Please upload a PDF, JPG, PNG, or HEIC.",
-        },
-        { status: 415 }
-      );
-    }
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "No file provided." }, { status: 400 });
+  }
+  if (file.size === 0) {
+    return NextResponse.json({ error: "File is empty." }, { status: 400 });
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return NextResponse.json(
+      { error: "File is too large. Maximum size is 4 MB per file." },
+      { status: 413 }
+    );
+  }
 
-    // Sanitize the original filename for the multipart Content-Disposition.
-    const safeName = (file.name || "document")
-      .replace(/[^A-Za-z0-9._-]/g, "_")
-      .slice(0, 120);
+  const header = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  const detectedType = detectDocumentType(header);
+  if (!detectedType || !MIME_BY_TYPE[detectedType].has(file.type)) {
+    return NextResponse.json(
+      { error: "The file contents do not match an allowed PDF, JPG, or PNG document." },
+      { status: 415 }
+    );
+  }
 
-    // Per GHL /forms/upload-custom-files docs: the files need a buffer keyed
-    // as "<custom_field_id>_<file_id>". We use a fresh UUID per file so
-    // multiple uploads accumulate on the contact's custom field.
+  const safeName = (file.name || `document.${detectedType}`)
+    .replace(/[^A-Za-z0-9._-]/g, "_")
+    .slice(0, 120);
+
+  try {
+    await scanFileForMalware(file, safeName);
+
     const fileFieldId = `${GHL_MEDICAL_DOCS_FIELD_ID}_${crypto.randomUUID()}`;
     const ghlForm = new FormData();
     ghlForm.append(fileFieldId, file, safeName);
-
     const url = new URL(`${GHL_BASE}/forms/upload-custom-files`);
-    url.searchParams.set("contactId", contactId);
-    url.searchParams.set("locationId", GHL_LOCATION_ID);
+    url.searchParams.set("contactId", order.contactId);
+    url.searchParams.set("locationId", ghlConfig.locationId);
 
-    const res = await fetch(url.toString(), {
+    const response = await fetch(url.toString(), {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${GHL_API_KEY}`,
+        Authorization: `Bearer ${ghlConfig.apiKey}`,
         Version: "2021-07-28",
       },
       body: ghlForm,
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(
-        "GHL custom-field upload failed:",
-        res.status,
-        errText.slice(0, 400)
-      );
+    if (!response.ok) {
+      console.error(`GHL document upload failed status=${response.status}`);
       return NextResponse.json(
-        {
-          error:
-            "We couldn't upload that file. Please try again or contact support.",
-          detail: `ghl_status=${res.status} ghl_body=${errText.slice(0, 400)}`,
-        },
+        { error: "We could not attach that document. Please try again." },
         { status: 502 }
       );
     }
 
-    // Tag the contact so the $250+ payment gate (/api/create-checkout) can
-    // verify docs exist server-side without racing the custom-field read.
-    // Non-fatal: the gate also re-reads the custom field directly.
-    try {
-      await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${GHL_API_KEY}`,
-          "Content-Type": "application/json",
-          Version: "2021-07-28",
-        },
-        body: JSON.stringify({ tags: ["docs-uploaded"] }),
-      });
-    } catch (tagErr) {
-      console.error("upload-doc: failed to tag docs-uploaded (non-fatal):", tagErr);
+    // The receipt is authoritative proof that this order—not merely a reused
+    // contact with an older file—completed a successful secure upload.
+    const uploadReceipt = issueUploadReceipt({
+      orderJti: order.jti,
+      contactId: order.contactId,
+      siteName: order.siteName,
+    });
+
+    // Lifecycle markers are best-effort after the authoritative file save.
+    // A transient tag/workflow failure must never force a duplicate upload.
+    // Contact-wide tags and workflow membership can represent several open
+    // applications. Never clear them here: doing so for this upload could make
+    // another no-document opportunity disappear from outreach. Only transition
+    // this exact opportunity's marker; paid routing remains opportunity-stage
+    // based in the Stripe webhook.
+    const cleanupResults = await Promise.allSettled([
+      addTagsToContact(order.contactId, [
+        GHL_TAGS.docsUploaded,
+        opportunityLifecycleTag(GHL_TAGS.docsUploaded, order.opportunityId),
+      ]),
+      removeTagFromContact(
+        order.contactId,
+        opportunityLifecycleTag(GHL_TAGS.needsDocs, order.opportunityId)
+      ),
+    ]);
+    if (cleanupResults.some((result) => result.status === "rejected")) {
+      console.error("Post-upload GHL lifecycle cleanup was partially unavailable");
     }
 
     return NextResponse.json({
       success: true,
+      uploadReceipt,
       fileName: safeName,
       size: file.size,
-      contentType: file.type || "application/octet-stream",
+      detectedType,
     });
-  } catch (err) {
-    console.error("upload-doc unhandled error:", err);
-    return NextResponse.json(
-      { error: "Unexpected error during upload. Please try again." },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Document upload failed";
+    // Do not log provider error objects: upload/scanner errors can contain file
+    // names, request details, or other sensitive metadata.
+    console.error("Secure document upload failed");
+    const userMessage = /security scan|scanning|did not pass/i.test(message)
+      ? message
+      : "We could not finish uploading that document. Please try again.";
+    return NextResponse.json({ error: userMessage }, { status: 502 });
   }
 }

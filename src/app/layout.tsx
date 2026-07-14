@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
 import { PauseBanner } from "@/components/purchase-pause";
-import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Chatbot } from "@/components/chatbot";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s | Online Tint Exemption",
   },
   description:
-    "Get your medical window tint exemption online. Licensed physicians, fast approval, all 50 states.",
+    "State-specific education and secure intake for medical window tint exemption reviews coordinated with MyEyeRx and independent licensed clinicians.",
   metadataBase: new URL("https://www.onlinetintexemption.com"),
   openGraph: {
     type: "website",
@@ -32,7 +21,7 @@ export const metadata: Metadata = {
     siteName: "Online Tint Exemption",
     title: "Medical Window Tint Exemption Online | Online Tint Exemption",
     description:
-      "Get your medical window tint exemption online. Licensed physicians, fast approval, all 50 states.",
+      "State-specific education and secure intake for medical window tint exemption reviews coordinated with MyEyeRx and independent licensed clinicians.",
   },
 };
 
@@ -43,9 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
-      >
+      <body className="antialiased min-h-screen flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -53,7 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <PauseBanner />
-        <Header />
+          <Header />
           <main className="flex-1">{children}</main>
           <Footer />
           <Chatbot />
