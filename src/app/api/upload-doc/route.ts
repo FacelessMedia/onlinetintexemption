@@ -5,6 +5,7 @@ import {
   ghlConfig,
   GHL_MEDICAL_DOCS_FIELD_ID,
   GHL_TAGS,
+  moveOpportunityStage,
   opportunityLifecycleTag,
   removeTagFromContact,
 } from "@/lib/ghl";
@@ -23,6 +24,25 @@ export const maxDuration = 60;
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_REQUEST_BYTES = MAX_FILE_BYTES + 256 * 1024;
+
+async function restoreUploadedOpportunityStage(opportunityId: string) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await moveOpportunityStage(
+        opportunityId,
+        ghlConfig.stageInfoSubmitted,
+        "open"
+      );
+      return true;
+    } catch {
+      console.error(`Post-upload opportunity stage attempt ${attempt} failed`);
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 300));
+      }
+    }
+  }
+  return false;
+}
 
 const MIME_BY_TYPE = {
   pdf: new Set(["application/pdf", "application/octet-stream", ""]),
@@ -181,20 +201,29 @@ export async function POST(request: NextRequest) {
     }
 
     // The receipt is authoritative proof that this order—not merely a reused
-    // contact with an older file—completed a successful secure upload.
+    // contact with an older file—completed a successful secure upload. Issue it
+    // after the file save so a stage outage never forces duplicate medical-file
+    // uploads; create-checkout re-confirms the exact opportunity stage.
     const uploadReceipt = issueUploadReceipt({
       orderJti: order.jti,
       contactId: order.contactId,
       siteName: order.siteName,
     });
 
-    // Lifecycle markers are best-effort after the authoritative file save.
-    // A transient tag/workflow failure must never force a duplicate upload.
+    const opportunityStageRestored = await restoreUploadedOpportunityStage(
+      order.opportunityId
+    );
+    if (!opportunityStageRestored) {
+      console.error("Post-upload opportunity stage is pending checkout retry");
+    }
+
+    // Contact-tag markers are best-effort after the authoritative file save and
+    // required opportunity transition. A transient tag failure must never force
+    // a duplicate upload.
     // Contact-wide tags and workflow membership can represent several open
     // applications. Never clear them here: doing so for this upload could make
-    // another no-document opportunity disappear from outreach. Only transition
-    // this exact opportunity's marker; paid routing remains opportunity-stage
-    // based in the Stripe webhook.
+    // another no-document opportunity disappear from outreach. Paid routing
+    // remains opportunity-stage based in the Stripe webhook.
     const cleanupResults = await Promise.allSettled([
       addTagsToContact(order.contactId, [
         GHL_TAGS.docsUploaded,
@@ -215,6 +244,7 @@ export async function POST(request: NextRequest) {
       fileName: safeName,
       size: file.size,
       detectedType,
+      statusPending: !opportunityStageRestored,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Document upload failed";

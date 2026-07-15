@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { requiresDocumentsForPrice } from "@/lib/docs-policy";
 import {
   addTagToContact,
   addTagsToContact,
@@ -251,8 +250,11 @@ async function handleCheckoutCompleted(
   }
 
   const hasDocs = context.hasCurrentSubmissionDocs;
-  const requiresDocs = requiresDocumentsForPrice(context.expectedPrice);
-  if (requiresDocs && !hasDocs) {
+  // New checkout sessions cannot be created without current-application proof.
+  // Keep the no-document branch for already-open legacy sessions: fulfill the
+  // paid customer, route the exact opportunity for follow-up, and alert Tory
+  // instead of losing the customer or silently misclassifying the payment.
+  if (!hasDocs) {
     const notification = await routeMissingDocsLead(
       context.contactId,
       context.opportunityId,
@@ -270,7 +272,7 @@ async function handleCheckoutCompleted(
     style: "currency",
     currency: "USD",
   });
-  const anomaly = requiresDocs && !hasDocs
+  const anomaly = !hasDocs
     ? " | alert=current application document proof missing"
     : "";
   return telemetry(

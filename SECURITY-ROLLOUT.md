@@ -13,7 +13,7 @@ endpoint returns 503 instead of silently running without its required control.
   reuse it across unrelated applications. Rotating it invalidates open forms.
 - `UPLOAD_RECEIPT_SECRET`: optional separate 32+ character secret for the
   short-lived, order-bound proof of a successful file upload. If omitted,
-  `ORDER_TOKEN_SECRET` is used. A $250-or-more checkout requires this receipt
+  `ORDER_TOKEN_SECRET` is used. Every checkout requires this receipt
   and a fresh server read of the GHL file field; an older file on an upserted
   contact is not enough.
 - `RATE_LIMIT_HASH_SECRET`: optional dedicated secret for HMAC-hashing rate
@@ -30,6 +30,14 @@ endpoint returns 503 instead of silently running without its required control.
 - `MALWARE_SCAN_API_KEY`: bearer credential for that private scanner; required
   in strict/production upload handling.
 - `MALWARE_SCAN_REQUIRED=true`: makes scanner errors fail closed.
+
+## Document explainer video
+
+- `NEXT_PUBLIC_DOCS_EXPLAINER_VIDEO_URL`: optional HeyGen player URL in the
+  exact form `https://app.heygen.com/embeds/<video-id>`. Other hosts, protocols,
+  paths, credentials, and query strings are rejected; URL fragments are
+  stripped. If it is unset or invalid, the booking page shows the complete
+  written explanation instead of a broken or untrusted frame.
 
 ## Missing-document workflow
 
@@ -90,13 +98,22 @@ endpoint returns 503 instead of silently running without its required control.
 - Keep `NEXT_PUBLIC_SUPPORT_CHAT_ENABLED` unset or `false` until the preview
   checks pass. The widget then shows MyEyeRx phone/email handoff only and never
   calls an AI endpoint.
-- To enable automated support, set `NEXT_PUBLIC_SUPPORT_CHAT_ENABLED=true`,
-  `OPENAI_API_KEY`, and `OPENAI_SUPPORT_MODEL`. The key is server-only.
+- To enable automated support, set `NEXT_PUBLIC_SUPPORT_CHAT_ENABLED=true` and
+  server-only `OPENAI_API_KEY`. The server defaults to `gpt-4.1`;
+  `OPENAI_SUPPORT_MODEL` is an optional server-side override for an explicitly
+  approved replacement.
 - Chat has no transcript persistence, analytics, Discord forwarding, or tools.
   It uses `store:false`, accepts only the current user message, caps input/output,
   sends a privacy-hashed `safety_identifier`, moderates both directions,
   and refuses obvious personal, medical-record, and payment-data pastes before
   calling OpenAI. Visitors are repeatedly warned not to share sensitive data.
+- The UI supports free text plus fixed suggested questions. Deterministic
+  guards reject obvious prompt-override/extraction requests before the model
+  call and suppress internal markers or secret-variable names in provider
+  output. These are risk-reduction layers, not proof that prompt injection is
+  impossible; the primary boundary is that chat has no tools, secrets, or
+  customer-record access. Provider output is rendered as escaped text rather
+  than executable HTML or model-supplied UI.
 - The sensitive-data detector reduces accidental disclosure but is not a PHI
   privacy boundary. Keep free-text chat disabled until the applicable data-
   governance and vendor-agreement decision is approved, or use a constrained-
@@ -118,10 +135,11 @@ endpoint returns 503 instead of silently running without its required control.
 ## Activation checklist
 
 1. Configure all variables in a preview deployment.
-2. Test a $225 application with and without a document.
-3. Test a $250+ application with no document and confirm: no Stripe session,
+2. Test a $225 application without a document and confirm it remains unpaid;
+   repeat with a clean document and confirm checkout opens.
+3. Test an application at every offered price with no document and confirm: no Stripe session,
    open unpaid GHL stage, `needs-docs-followup`, and Tory receives one email.
-4. Test a $250+ application with a real clean file and confirm checkout opens.
+4. Test applications at representative prices with a real clean file and confirm checkout opens.
 5. Test an invalid/malicious file and confirm it never reaches GHL.
 6. Confirm a paid Stripe test event moves the correct opportunity exactly once.
 7. Run `npm run test:guards`; confirm fleet allowlisting, body limits, privacy

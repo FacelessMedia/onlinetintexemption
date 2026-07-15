@@ -97,7 +97,7 @@ test("bounded JSON reader enforces declared and actual byte limits", async () =>
   );
 });
 
-test("strict configuration is scoped so $225 checkout ignores $250+ CRM settings", () => {
+test("strict configuration remains endpoint-scoped from CRM workflow settings", () => {
   const mutableEnv = process.env as Record<string, string | undefined>;
   const keys = [
     "NODE_ENV",

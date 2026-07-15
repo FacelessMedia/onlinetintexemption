@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       docUploadChoice: body.docUploadChoice,
     });
 
-    // Every $250+ application must have either current-application document
+    // Every application must have either current-application document
     // proof or a confirmed per-opportunity Tory alert before the browser gets
     // a token that can upload or open Stripe. This includes "upload now": the
     // alert is the abandonment safety net and the applicant may still upload
@@ -259,8 +259,9 @@ export async function POST(request: NextRequest) {
       `${ghlConfig.siteName}:${stateData.slug}:${submissionReference}:${opportunityId}`
     );
 
-    // "Upload later" remains a saved, unpaid lead. "Upload now" receives the
-    // token only after the alert above and may proceed through the secure upload.
+    // "Upload later" remains a saved, unpaid lead at every price. "Upload now"
+    // receives the token only after the alert above and may proceed through the
+    // secure upload.
     if (requiresDocs && body.docUploadChoice === "later") {
       return NextResponse.json({
         success: true,

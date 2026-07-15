@@ -3,7 +3,10 @@ import { z } from "zod";
 import { getStateBySlug } from "@/data/states";
 import { buildSupportInstructions } from "@/lib/support-knowledge-base";
 import {
+  containsRestrictedSupportOutput,
+  detectPromptManipulation,
   detectSensitiveData,
+  promptManipulationRefusal,
   sensitiveDataRefusal,
   SUPPORT_EMAIL,
   SUPPORT_PHONE_DISPLAY,
@@ -53,8 +56,8 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY || "";
-  const model = process.env.OPENAI_SUPPORT_MODEL || "";
-  if (!apiKey || !model) {
+  const model = process.env.OPENAI_SUPPORT_MODEL?.trim() || "gpt-4.1";
+  if (!apiKey) {
     console.error("Support chat OpenAI configuration is incomplete");
     return NextResponse.json(
       { error: humanHandoff("Automated support is temporarily unavailable.") },
@@ -108,6 +111,12 @@ export async function POST(request: NextRequest) {
   if (detectSensitiveData(message)) {
     return NextResponse.json({ reply: sensitiveDataRefusal(), refused: true });
   }
+  if (detectPromptManipulation(message)) {
+    return NextResponse.json({
+      reply: promptManipulationRefusal(),
+      refused: true,
+    });
+  }
 
   try {
     if (await isModerationFlagged(apiKey, message)) {
@@ -151,7 +160,11 @@ export async function POST(request: NextRequest) {
 
     const responseBody = (await response.json()) as OpenAIResponseBody;
     const reply = extractOutputText(responseBody).trim().slice(0, 1_500);
-    if (!reply || (await isModerationFlagged(apiKey, reply))) {
+    if (
+      !reply ||
+      containsRestrictedSupportOutput(reply) ||
+      (await isModerationFlagged(apiKey, reply))
+    ) {
       return NextResponse.json({
         reply: humanHandoff("I do not have an approved answer for that question."),
       });

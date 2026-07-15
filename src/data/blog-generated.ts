@@ -50,7 +50,7 @@ export const generatedPosts: BlogPost[] = [
 <p>Online Tint Exemption websites provide state-focused education and secure intake. <a href="https://www.myeyerx.net/">MyEyeRx</a> is the official medical-services partner and coordinates consultation booking, referrals, and follow-up. Independent licensed physicians or optometrists handle clinical evaluations and any clinical documentation. The websites and MyEyeRx do not install tint, promise qualification, or make state-agency decisions.</p>
 
 <h2>Payment and document routing</h2>
-<p>A $225 order may proceed to Stripe with or without an uploaded document and is routed according to whether that current intake included a confirmed upload. Under MyEyeRx's review-process rule, an order priced at $250 or more cannot proceed to Stripe until the secure system confirms a real document upload. A $250-or-more applicant without a document remains an unpaid lead so the team can explain the secure next step.</p>
+<p>Under MyEyeRx's review-process rule, every order requires the secure system to confirm a real current-intake document upload before Stripe Checkout can begin. An applicant without a document remains an unpaid lead so the team can review the submitted information and explain the secure next step.</p>
 
 <h2>Timing, refunds, and outcomes</h2>
 <p>Timing depends on record completeness, provider availability, clinical review, and any separate agency process. No turnaround or approval time is guaranteed. Refund decisions follow the <a href="/refund-policy">published refund policy</a>; this article does not promise a particular refund result.</p>
@@ -129,7 +129,7 @@ export const generatedPosts: BlogPost[] = [
 <p>This website provides education and secure intake. <a href="https://www.myeyerx.net/">MyEyeRx</a> is the official medical-services partner and coordinates consultation booking, referrals, and customer follow-up. Independent licensed providers make clinical decisions. Neither this website nor MyEyeRx installs tint, guarantees an exemption, or determines what a state agency will accept.</p>
 
 <h2>Documents and payment</h2>
-<p>A $225 order may proceed to Stripe with or without a current-intake document upload. For orders priced at $250 or more, MyEyeRx requires the system to confirm a real secure upload before Stripe Checkout can begin. If a $250-or-more applicant submits without records, no payment is taken and the team follows up about acceptable documents.</p>
+<p>MyEyeRx requires the system to confirm a real current-intake document upload before Stripe Checkout can begin for every order. If an applicant submits without records, no payment is taken and the team follows up about acceptable documents.</p>
 
 <h2>Timing, privacy, and refund expectations</h2>
 <p>Timing varies with document completeness, provider availability, clinical review, and any separate state process. No delivery or approval time is guaranteed. The system uses access controls and purpose-specific safeguards, but this article does not make an absolute confidentiality or regulatory-status claim. Refund requests are evaluated under the <a href="/refund-policy">published refund policy</a>.</p>

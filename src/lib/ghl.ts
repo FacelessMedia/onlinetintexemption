@@ -13,7 +13,7 @@
  *   GHL_STAGE_INFO_SUBMITTED  Stage for a brand-new lead (pre-payment)
  *   GHL_STAGE_DOCS_SUBMITTED  Stage for a paid customer who uploaded docs
  *   GHL_STAGE_NO_DOCS         Stage for a paid customer with no docs yet
- *   GHL_STAGE_NEEDS_DOCS      Stage for an UNPAID lead blocked on docs ($250+)
+ *   GHL_STAGE_NEEDS_DOCS      Stage for an UNPAID lead blocked on documents
  *   GHL_MEDICAL_DOCS_FIELD_ID FILE_UPLOAD custom field id ("Medical Documentation")
  *   SITE_NAME                 Source/tag stamp
  */
@@ -24,6 +24,7 @@ import {
   finishNotificationLock,
   releaseNotificationLock,
 } from "./notification-lock.ts";
+import { withOpportunityStageLock } from "./opportunity-stage-lock.ts";
 
 export const GHL_BASE = "https://services.leadconnectorhq.com";
 
@@ -211,7 +212,8 @@ export async function upsertContact(data: ContactInput): Promise<string> {
     ]);
   } catch {
     // The contact itself is the authoritative lead record. A noncritical tag
-    // outage must not discard the lead or prevent a $225 customer from paying.
+    // outage must not discard the lead. Checkout remains independently gated
+    // on a confirmed current-application document.
     console.error("Post-upsert GHL tag operation failed");
   }
   return contactId;
@@ -335,18 +337,50 @@ export async function moveOpportunityStage(
   opportunityId: string,
   stageId: string,
   status?: "open" | "won" | "lost"
-) {
-  if (!opportunityId || !stageId) return;
-  const payload: Record<string, unknown> = { pipelineStageId: stageId };
-  if (status) payload.status = status;
-  const res = await ghlFetch(`/opportunities/${opportunityId}`, {
-    method: "PUT",
-    headers: { Version: "v3", Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(`GHL move opportunity failed status=${res.status}`);
+): Promise<boolean> {
+  if (!opportunityId || !stageId) {
+    throw new Error("GHL opportunity stage configuration is incomplete");
   }
+  return withOpportunityStageLock(opportunityId, async () => {
+    // Browser/token retries may arrive after a webhook has already marked the
+    // opportunity won or lost. Pre-payment transitions are monotonic: inspect
+    // status while holding the fleet-wide lock and never reopen or move a
+    // terminal opportunity. Terminal webhook transitions use the same lock.
+    if (!status || status === "open") {
+      const currentResponse = await ghlFetch(
+        `/opportunities/${encodeURIComponent(opportunityId)}`,
+        {
+          cache: "no-store",
+          headers: { Version: "v3", Accept: "application/json" },
+        }
+      );
+      if (!currentResponse.ok) {
+        throw new Error(
+          `GHL opportunity status read failed status=${currentResponse.status}`
+        );
+      }
+      const currentJson = await currentResponse.json();
+      const current = currentJson?.opportunity || currentJson;
+      const currentStatus =
+        typeof current?.status === "string" ? current.status.toLowerCase() : "";
+      if (currentStatus !== "open") return false;
+    }
+
+    const payload: Record<string, unknown> = { pipelineStageId: stageId };
+    if (status) payload.status = status;
+    const res = await ghlFetch(
+      `/opportunities/${encodeURIComponent(opportunityId)}`,
+      {
+        method: "PUT",
+        headers: { Version: "v3", Accept: "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`GHL move opportunity failed status=${res.status}`);
+    }
+    return true;
+  });
 }
 
 export async function contactHasTag(contactId: string, tag: string): Promise<boolean> {
@@ -372,7 +406,7 @@ async function sendMissingDocsInternalEmail(
     `/contacts/detail/${encodeURIComponent(leadContactId)}`;
   const submissionSuffix =
     opportunityId.replace(/[^A-Za-z0-9_-]/g, "").slice(-8) || "unknown";
-  const subject = `Action needed: $250+ intake missing documents [${submissionSuffix}]`;
+  const subject = `Action needed: intake missing documents [${submissionSuffix}]`;
   const message = [
     "A website intake requires document follow-up before payment can be accepted.",
     `Site: ${ghlConfig.siteName}`,
@@ -450,7 +484,7 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Put an unpaid $250+ applicant in the explicit missing-docs opportunity path.
+ * Put an unpaid applicant in the explicit missing-documents opportunity path.
  * Tory's internal notification is queued directly below and receives a per-
  * opportunity idempotency marker. Contact-wide recurring nurture is
  * intentionally not enrolled because one contact can have several submissions.
@@ -462,7 +496,7 @@ export async function routeMissingDocsLead(
   priceDollars: number
 ): Promise<{ workflowQueued: boolean; emailQueued: boolean }> {
   if (!requiresDocumentsForPrice(priceDollars)) {
-    throw new Error("Missing-document routing is only valid for $250+ orders");
+    throw new Error("Missing-document routing requires a valid order price");
   }
   try {
     await addTagsToContact(contactId, [
@@ -548,7 +582,7 @@ export async function routeMissingDocsLead(
 /**
  * Server-side proof that the lead has uploaded medical docs. Only a non-empty
  * FILE_UPLOAD custom field counts. Tags are derived workflow markers and are
- * never accepted as proof. This is the authoritative $250+ payment gate; it
+ * never accepted as proof. This is the authoritative payment gate; it
  * cannot be bypassed by the client. Throws on GHL read errors so checkout and
  * webhook fulfillment retry instead of misclassifying an unavailable record as
  * a customer with no documents.

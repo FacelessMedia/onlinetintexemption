@@ -152,7 +152,48 @@ test("GHL opportunity calls use v3 camelCase search and remain retry-safe", asyn
   }
 });
 
-test("a concurrent missing-doc email send remains pending until GHL accepts it", async () => {
+test("an open-stage token replay cannot move a won opportunity", async () => {
+  const originalFetch = globalThis.fetch;
+  const mutableEnv = process.env as Record<string, string | undefined>;
+  const originalMode = mutableEnv.SECURITY_ENFORCEMENT_MODE;
+  const originalRedisUrl = mutableEnv.UPSTASH_REDIS_REST_URL;
+  const originalRedisToken = mutableEnv.UPSTASH_REDIS_REST_TOKEN;
+  delete mutableEnv.SECURITY_ENFORCEMENT_MODE;
+  delete mutableEnv.UPSTASH_REDIS_REST_URL;
+  delete mutableEnv.UPSTASH_REDIS_REST_TOKEN;
+  let putCalls = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (url.endsWith("/opportunities/terminal-opp") && !init?.method) {
+      return Response.json({ opportunity: { status: "won" } });
+    }
+    if (url.endsWith("/opportunities/terminal-opp") && init?.method === "PUT") {
+      putCalls += 1;
+      return new Response(null, { status: 200 });
+    }
+    throw new Error(`Unexpected test request: ${url}`);
+  };
+
+  try {
+    const moved = await moveOpportunityStage(
+      "terminal-opp",
+      "info-submitted-stage",
+      "open"
+    );
+    assert.equal(moved, false);
+    assert.equal(putCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalMode === undefined) delete mutableEnv.SECURITY_ENFORCEMENT_MODE;
+    else mutableEnv.SECURITY_ENFORCEMENT_MODE = originalMode;
+    if (originalRedisUrl === undefined) delete mutableEnv.UPSTASH_REDIS_REST_URL;
+    else mutableEnv.UPSTASH_REDIS_REST_URL = originalRedisUrl;
+    if (originalRedisToken === undefined) delete mutableEnv.UPSTASH_REDIS_REST_TOKEN;
+    else mutableEnv.UPSTASH_REDIS_REST_TOKEN = originalRedisToken;
+  }
+});
+
+test("a $225 missing-doc alert remains single-send and pending until GHL accepts it", async () => {
   const mutableEnv = process.env as Record<string, string | undefined>;
   const originalUrl = mutableEnv.UPSTASH_REDIS_REST_URL;
   const originalToken = mutableEnv.UPSTASH_REDIS_REST_TOKEN;
@@ -229,7 +270,7 @@ test("a concurrent missing-doc email send remains pending until GHL accepts it",
       "contact-race",
       sharedOpportunityId,
       "Texas",
-      250
+      225
     );
     await emailStarted;
     // Both calls use the same application id; the second must not interpret
@@ -238,7 +279,7 @@ test("a concurrent missing-doc email send remains pending until GHL accepts it",
       "contact-race",
       sharedOpportunityId,
       "Texas",
-      250
+      225
     );
     assert.equal(second.emailQueued, false);
     assert.equal(emailCalls, 1);

@@ -13,6 +13,12 @@ const TURNSTILE_ENABLED = Boolean(
 const SUPPORT_PHONE_DISPLAY = "734-338-9453";
 const SUPPORT_PHONE_HREF = "tel:+17343389453";
 const SUPPORT_EMAIL = "Tory@myeyerx.net";
+const QUICK_QUESTIONS = [
+  "What documents can I upload?",
+  "Why are documents required?",
+  "What happens after I submit?",
+  "How does payment work?",
+] as const;
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -202,6 +208,32 @@ export function Chatbot() {
                     {error}
                   </p>
                 )}
+                <div
+                  className="mb-3"
+                  role="group"
+                  aria-label="Suggested support questions"
+                >
+                  <p className="mb-1.5 text-xs font-medium text-foreground">
+                    Suggested questions
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {QUICK_QUESTIONS.map((question) => (
+                      <button
+                        key={question}
+                        type="button"
+                        onClick={() => {
+                          setInput(question);
+                          setError(null);
+                          inputRef.current?.focus();
+                        }}
+                        disabled={loading}
+                        className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <p className="mb-2 text-xs text-muted-foreground">
                   General questions only. Never paste personal, medical, or payment
                   information here.

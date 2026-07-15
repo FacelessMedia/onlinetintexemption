@@ -108,10 +108,6 @@ const initialFormData: FormData = {
   website: "",
 };
 
-// Orders priced at/above this require medical docs before we can take payment.
-// Mirrors the server default (DOCS_REQUIRED_MIN_PRICE); the gate is ENFORCED in
-// /api/create-checkout — this is only for up-front UX branching.
-const DOCS_REQUIRED_MIN_PRICE = 250;
 const TURNSTILE_ENABLED = Boolean(
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 );
@@ -138,7 +134,7 @@ export function BookingForm({
   const [success, setSuccess] = useState(false);
   // Hosted Stripe Checkout URL returned by /api/create-checkout.
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
-  // Set when a $250+ applicant submits WITHOUT docs: we saved them as a lead and
+  // Set when an applicant submits WITHOUT docs: we saved them as a lead and
   // will follow up for documentation — no payment is taken.
   const [leadOnlyMessage, setLeadOnlyMessage] = useState<string | null>(null);
   const [orderToken, setOrderToken] = useState<string | null>(null);
@@ -148,9 +144,9 @@ export function BookingForm({
 
   const fullPrice = `$${price}`;
   const displayPrice = fullPrice;
-  // $250+ orders are gated on documentation. When true and the buyer doesn't
-  // upload docs, the form captures them as a follow-up lead and takes NO payment.
-  const requiresDocs = price >= DOCS_REQUIRED_MIN_PRICE;
+  // Every order is gated on documentation. The server enforces this invariant;
+  // this constant only controls the matching up-front experience.
+  const requiresDocs = true;
   const isLeadOnlyPath =
     requiresDocs && form.docUploadChoice === "later";
 
@@ -311,7 +307,7 @@ export function BookingForm({
 
   function handleStep2Submit() {
     if (!form.acknowledgesDocumentation || !form.docUploadChoice) return;
-    // For $250+ orders the "upload now" path must include at least one file —
+    // The "upload now" path must include at least one file —
     // payment is gated on documentation. (The "later" path is allowed: it
     // becomes a no-charge follow-up lead.)
     if (
@@ -334,7 +330,7 @@ export function BookingForm({
     try {
       let newOrderToken: string | null = orderToken;
       // Phase 1 — Lead capture. Always upserts the GHL contact/opportunity (even
-      // a $250+ applicant who never uploads docs becomes a follow-up lead) and
+      // an applicant who never uploads docs becomes a follow-up lead) and
       // returns whether docs are required. We send stateSlug so the SERVER looks
       // up the authoritative price — the client-sent amount is never trusted.
       // A checkout/provider retry reuses the already signed order instead of
@@ -384,7 +380,7 @@ export function BookingForm({
           ? await res.json().catch(() => ({}))
           : {};
         if (!res.ok) {
-          // A token is returned only after the $250+ per-opportunity alert is
+          // A token is returned only after the per-opportunity alert is
           // confirmed. If no token was returned, refresh the single-use bot
           // challenge and retry this same stable submission reference.
           if (typeof lead?.orderToken === "string" && lead.orderToken) {
@@ -430,9 +426,9 @@ export function BookingForm({
       if (!newOrderToken) throw new Error("Invalid order session.");
 
       // Phase 2 — If the buyer chose "upload now", push the files to the contact
-      // BEFORE creating checkout, because the $250+ gate verifies docs exist on
+      // BEFORE creating checkout, because the payment gate verifies docs exist on
       // the contact server-side. A failed upload is never counted as proof and
-      // therefore cannot unlock a $250+ Stripe Checkout session.
+      // therefore cannot unlock a Stripe Checkout session.
       let confirmedUploadReceipt =
         orderToken === newOrderToken ? uploadReceipt : null;
       if (orderToken !== newOrderToken) setUploadReceipt(null);
@@ -453,11 +449,6 @@ export function BookingForm({
         if (!confirmedUploadReceipt && requiresDocs) {
           throw new Error(
             "Your application is saved, but no document upload was confirmed. Retry the file shown below; no payment was taken."
-          );
-        }
-        if (!confirmedUploadReceipt && !requiresDocs) {
-          setUploadWarning(
-            "No optional document upload was confirmed. Your $225 order will continue securely as Paid - No Docs, and the team can request documentation later."
           );
         }
       }
@@ -505,7 +496,7 @@ export function BookingForm({
       }
 
       if (co.blocked) {
-        // $250+ submitted without docs — lead saved, no payment taken.
+        // Submitted without docs — lead saved, no payment taken.
         setLeadOnlyMessage(
           String(
             co.message ||
@@ -541,7 +532,7 @@ export function BookingForm({
 
   // ---- Success State ----
   if (success) {
-    // No-charge follow-up lead ($250+ submitted without docs).
+    // No-charge follow-up lead submitted without documents.
     if (leadOnlyMessage) {
       return (
         <div className="mx-auto max-w-2xl rounded-xl border border-secondary/30 bg-secondary/10 p-8 text-center">
@@ -985,10 +976,9 @@ export function BookingForm({
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
-                      For orders priced at $250 or more, MyEyeRx requires a secure
-                      document upload before payment as part of its review process.
-                      This threshold is an operational rule, not a statement of
-                      state law.
+                      MyEyeRx requires a secure document upload before payment for
+                      every order as part of its review process. This is an
+                      operational review rule, not a statement of state law.
                     </span>
                   </li>
                 </ul>
@@ -1049,26 +1039,13 @@ export function BookingForm({
               Upload Your Documentation
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {requiresDocs ? (
-                <>
-                  For orders priced at $250 or more, MyEyeRx&apos;s review process
-                  requires a secure document upload before payment.{" "}
-                  <strong className="text-foreground">
-                    Upload it now to complete payment
-                  </strong>
-                  , or submit without it and we&apos;ll follow up — you
-                  won&apos;t be charged until we receive your documents.
-                </>
-              ) : (
-                <>
-                  Uploading your documents now will{" "}
-                  <strong className="text-foreground">
-                    make the records available for review sooner
-                  </strong>{" "}
-                  of getting your exemption. You may also upload them later after
-                  purchase.
-                </>
-              )}
+              MyEyeRx&apos;s review process requires a secure document upload before
+              payment for every order.{" "}
+              <strong className="text-foreground">
+                Upload it now to continue to payment
+              </strong>
+              , or submit without it and we&apos;ll follow up — you won&apos;t be
+              charged until we receive your documents.
             </p>
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -1101,10 +1078,10 @@ export function BookingForm({
                 <Clock className="h-5 w-5" />
                 <div className="text-left">
                   <span className="block font-semibold">
-                    {requiresDocs ? "Submit Without Docs" : "Upload Later"}
+                    Submit Without Docs
                   </span>
                   <span className="block text-xs text-muted-foreground">
-                    {requiresDocs ? "We follow up — no charge now" : "After purchase"}
+                    We follow up — no charge now
                   </span>
                 </div>
               </button>
@@ -1162,38 +1139,17 @@ export function BookingForm({
                     application record when you submit your application.
                   </p>
                 )}
-                {!requiresDocs && uploadedDocs.length === 0 && (
-                  <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-                    No optional document is selected. You can still continue to
-                    the secure $225 checkout; this application will be recorded
-                    without documents, and clinician review will wait until the
-                    team receives them.
-                  </p>
-                )}
               </div>
             )}
 
             {form.docUploadChoice === "later" && (
               <div className="mt-4 rounded-lg border border-secondary/30 bg-secondary/10 p-3">
                 <p className="text-sm text-foreground">
-                  {requiresDocs ? (
-                    <>
-                      We&apos;ll save your application and contact you with a secure
-                      upload option. Do not send records by ordinary email.{" "}
-                      <strong>
-                        No payment is taken until your documents are received.
-                      </strong>
-                    </>
-                  ) : (
-                    <>
-                      You will receive follow-up instructions for secure document
-                      upload after purchase. Do not reply with medical records.{" "}
-                      <strong>
-                        Your exemption cannot be processed until documentation is
-                        received.
-                      </strong>
-                    </>
-                  )}
+                  We&apos;ll save your application and contact you with a secure
+                  upload option. Do not send records by ordinary email.{" "}
+                  <strong>
+                    No payment is taken until your documents are received.
+                  </strong>
                 </p>
               </div>
             )}
@@ -1215,8 +1171,8 @@ export function BookingForm({
                 Selecting a condition does not guarantee qualification or approval.
                 An independent licensed provider will review my application and may
                 request more information. I will submit records only through the
-                secure uploader. For a $250-or-more order, payment cannot begin
-                until the system confirms a document upload.
+                secure uploader. Payment cannot begin until the system confirms a
+                current-application document upload.
               </span>
             </label>
           </div>

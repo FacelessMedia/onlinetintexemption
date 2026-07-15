@@ -1,14 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  DOCS_REQUIRED_MIN_PRICE,
-  requiresDocumentsForPrice,
-} from "../src/lib/docs-policy.ts";
+import { requiresDocumentsForPrice } from "../src/lib/docs-policy.ts";
 
-test("document threshold is immutable at $250", () => {
-  assert.equal(DOCS_REQUIRED_MIN_PRICE, 250);
-  assert.equal(requiresDocumentsForPrice(225), false);
-  assert.equal(requiresDocumentsForPrice(249), false);
+test("every valid order price requires current-application documents", () => {
+  assert.equal(requiresDocumentsForPrice(1), true);
+  assert.equal(requiresDocumentsForPrice(225), true);
+  assert.equal(requiresDocumentsForPrice(249), true);
   assert.equal(requiresDocumentsForPrice(250), true);
   assert.equal(requiresDocumentsForPrice(350), true);
 });

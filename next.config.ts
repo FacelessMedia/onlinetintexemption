@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
+            key: "Content-Security-Policy",
+            value:
+              "frame-src 'self' https://app.heygen.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+          },
+          {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=()",
           },

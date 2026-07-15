@@ -239,10 +239,10 @@ export type SecurityConfigurationScope =
   | "support";
 
 /**
- * Validate only the controls an endpoint actually depends on. In particular,
- * $225 intake/checkout must not be disabled by a missing $250+ CRM stage or
- * follow-up workflow. Production still fails closed for every relevant
- * anti-bot, distributed rate-limit, webhook-idempotency, and malware control.
+ * Validate only the controls an endpoint actually depends on. Production
+ * fails closed for every relevant anti-bot, distributed rate-limit,
+ * webhook-idempotency, and malware control. Missing-document routing still
+ * has its own runtime checks and never permits checkout as a fallback.
  */
 export function securityConfigurationErrors(
   scope: SecurityConfigurationScope
