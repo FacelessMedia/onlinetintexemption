@@ -91,6 +91,123 @@ test("GHL upsert omits tags, writes address/DOB, and survives tag failure", asyn
   }
 });
 
+test("exact contact mode reuses a full identity match without ordinary upsert", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalConfig = { ...ghlConfig };
+  const mutableEnv = process.env as Record<string, string | undefined>;
+  const envKeys = [
+    "GHL_EXACT_CONTACT_REUSE_MODE",
+    "GHL_DUPLICATE_CONTACTS_CONFIRMED",
+    "GHL_CONTACT_IDENTITY_SECRET",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+  ] as const;
+  const originalEnv = Object.fromEntries(
+    envKeys.map((key) => [key, mutableEnv[key]])
+  );
+  Object.assign(mutableEnv, {
+    GHL_EXACT_CONTACT_REUSE_MODE: "enabled",
+    GHL_DUPLICATE_CONTACTS_CONFIRMED: "true",
+    GHL_CONTACT_IDENTITY_SECRET:
+      "test-secret-that-is-at-least-32-bytes-long",
+    UPSTASH_REDIS_REST_URL: "https://redis.example.test",
+    UPSTASH_REDIS_REST_TOKEN: "redis-token",
+  });
+  Object.assign(ghlConfig, {
+    apiKey: "test-token",
+    locationId: "location-123",
+    siteName: "online-tint-exemption",
+  });
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    calls.push({ url, init });
+    if (url === "https://redis.example.test") {
+      return Response.json({ result: 1 });
+    }
+    if (url.endsWith("/contacts/search")) {
+      return Response.json({ contacts: [{ id: "exact-contact" }], total: 1 });
+    }
+    if (url.endsWith("/contacts/exact-contact") && init?.method === "PUT") {
+      return Response.json({ contact: { id: "exact-contact" } });
+    }
+    if (url.endsWith("/contacts/exact-contact") && !init?.method) {
+      return Response.json({
+        contact: {
+          id: "exact-contact",
+          firstName: "Test",
+          lastName: "Customer",
+          email: "customer@example.test",
+          phone: "+17343389453",
+          dateOfBirth: "1980-01-02T00:00:00.000Z",
+          address1: "123 Main St, Unit 4",
+          city: "Austin",
+          state: "TX",
+          postalCode: "78701",
+          country: "US",
+        },
+      });
+    }
+    if (url.endsWith("/contacts/exact-contact/tags")) {
+      return new Response(null, { status: 200 });
+    }
+    throw new Error(`Unexpected test request: ${url}`);
+  };
+
+  try {
+    const contactId = await upsertContact({
+      firstName: "Test",
+      lastName: "Customer",
+      email: "customer@example.test",
+      phone: "7343389453",
+      dateOfBirth: "1980-01-02",
+      addressLine1: "123 Main St",
+      addressLine2: "Unit 4",
+      city: "Austin",
+      postalCode: "78701",
+      state: "Texas",
+      stateCode: "TX",
+      conditions: ["Photophobia"],
+      otherCondition: "",
+      details: "Light sensitivity while driving.",
+      medications: "",
+      duration: "More than 1 year",
+      frequency: "Daily",
+      hasSeenDoctor: "Yes",
+      hasTintedBefore: "No",
+      currentTintPercent: "",
+      isLicensedDriver: "Yes",
+      isIntendedDriver: "Yes",
+      numberOfVehicles: "1",
+      timeZone: "Central",
+      howDidYouHear: "Search",
+      docUploadChoice: "later",
+    });
+    assert.equal(contactId, "exact-contact");
+    assert.equal(calls.some(({ url }) => url.endsWith("/contacts/upsert")), false);
+    assert.equal(
+      calls.some(
+        ({ url, init }) => url.endsWith("/contacts/") && init?.method === "POST"
+      ),
+      false
+    );
+    assert.ok(
+      calls.some(
+        ({ url, init }) =>
+          url.endsWith("/contacts/exact-contact") && init?.method === "PUT"
+      )
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    Object.assign(ghlConfig, originalConfig);
+    for (const key of envKeys) {
+      const value = originalEnv[key];
+      if (value === undefined) delete mutableEnv[key];
+      else mutableEnv[key] = value;
+    }
+  }
+});
+
 test("GHL opportunity calls use v3 camelCase search and remain retry-safe", async () => {
   const originalFetch = globalThis.fetch;
   const originalConfig = { ...ghlConfig };
@@ -250,9 +367,18 @@ test("a $225 missing-doc alert remains single-send and pending until GHL accepts
     if (url.endsWith("/contacts/contact-race")) {
       return Response.json({ contact: { tags: [] } });
     }
+    if (url.endsWith("/contacts/contact-race/tags")) {
+      return new Response(null, { status: 200 });
+    }
     if (
-      url.endsWith("/contacts/contact-race/tags") ||
-      url.endsWith(`/opportunities/${sharedOpportunityId}`)
+      url.endsWith(`/opportunities/${sharedOpportunityId}`) &&
+      !init?.method
+    ) {
+      return Response.json({ opportunity: { status: "open" } });
+    }
+    if (
+      url.endsWith(`/opportunities/${sharedOpportunityId}`) &&
+      init?.method === "PUT"
     ) {
       return new Response(null, { status: 200 });
     }
@@ -296,5 +422,79 @@ test("a $225 missing-doc alert remains single-send and pending until GHL accepts
     else mutableEnv.UPSTASH_REDIS_REST_URL = originalUrl;
     if (originalToken === undefined) delete mutableEnv.UPSTASH_REDIS_REST_TOKEN;
     else mutableEnv.UPSTASH_REDIS_REST_TOKEN = originalToken;
+  }
+});
+
+test("missing-doc routing fails closed when its durable GHL stage cannot be written", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalConfig = { ...ghlConfig };
+  const originalConsoleError = console.error;
+  const opportunityId = `opportunity-stage-failure-${crypto.randomUUID()}`;
+  let emailCalls = 0;
+  Object.assign(ghlConfig, {
+    locationId: "location-stage-failure",
+    stageNeedsDocs: "stage-needs-docs",
+    internalNotificationContactId: "internal-contact",
+  });
+  console.error = () => undefined;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (url.endsWith("/contacts/contact-stage-failure/tags")) {
+      return new Response(null, { status: 200 });
+    }
+    if (url.endsWith(`/opportunities/${opportunityId}`) && !init?.method) {
+      return Response.json({ opportunity: { status: "open" } });
+    }
+    if (
+      url.endsWith(`/opportunities/${opportunityId}`) &&
+      init?.method === "PUT"
+    ) {
+      return new Response(null, { status: 503 });
+    }
+    if (url.endsWith("/conversations/messages")) {
+      emailCalls += 1;
+      return new Response(null, { status: 202 });
+    }
+    throw new Error(`Unexpected test request: ${url}`);
+  };
+
+  try {
+    await assert.rejects(
+      routeMissingDocsLead(
+        "contact-stage-failure",
+        opportunityId,
+        "Texas",
+        225
+      ),
+      /GHL move opportunity failed status=503/
+    );
+    assert.equal(emailCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.error = originalConsoleError;
+    Object.assign(ghlConfig, originalConfig);
+  }
+});
+
+test("missing-doc routing rejects reuse of another lifecycle stage", async () => {
+  const originalConfig = { ...ghlConfig };
+  Object.assign(ghlConfig, {
+    stageInfoSubmitted: "shared-stage",
+    stageDocsSubmitted: "",
+    stageNoDocs: "",
+    stageNeedsDocs: "shared-stage",
+  });
+  try {
+    await assert.rejects(
+      routeMissingDocsLead(
+        "contact-stage-collision",
+        `opportunity-stage-collision-${crypto.randomUUID()}`,
+        "Texas",
+        225
+      ),
+      /dedicated unpaid stage/
+    );
+  } finally {
+    Object.assign(ghlConfig, originalConfig);
   }
 });

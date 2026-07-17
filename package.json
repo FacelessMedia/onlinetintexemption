@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:guards": "node --experimental-strip-types --test tests/application-snapshot.test.ts tests/docs-explainer-video.test.ts tests/docs-policy.test.ts tests/fleet-sites.test.ts tests/ghl.test.ts tests/idempotency.test.ts tests/intake-values.test.ts tests/malware-scan.test.ts tests/notification-lock.test.ts tests/opportunity-stage-lock.test.ts tests/order-token.test.ts tests/request-security.test.ts tests/stripe-webhook-policy.test.ts tests/support-chat-guards.test.ts tests/upload-receipt.test.ts"
+    "test:guards": "node --experimental-strip-types --test tests/application-snapshot.test.ts tests/contact-identity.test.ts tests/docs-explainer-video.test.ts tests/docs-policy.test.ts tests/fleet-sites.test.ts tests/ghl.test.ts tests/idempotency.test.ts tests/intake-values.test.ts tests/malware-scan.test.ts tests/notification-lock.test.ts tests/opportunity-stage-lock.test.ts tests/order-token.test.ts tests/request-security.test.ts tests/stripe-webhook-policy.test.ts tests/support-chat-guards.test.ts tests/upload-receipt.test.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

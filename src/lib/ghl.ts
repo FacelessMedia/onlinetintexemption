@@ -20,6 +20,13 @@
 
 import { requiresDocumentsForPrice } from "./docs-policy.ts";
 import {
+  exactContactReuseEnabled,
+  matchesExactContactIdentity,
+  type GhlContactIdentityRecord,
+  type SubmittedContactIdentity,
+  withExactContactIdentityLock,
+} from "./contact-identity.ts";
+import {
   claimNotificationLock,
   finishNotificationLock,
   releaseNotificationLock,
@@ -63,8 +70,10 @@ export const ghlConfig = {
   stageInfoSubmitted: process.env.GHL_STAGE_INFO_SUBMITTED || "",
   stageDocsSubmitted: process.env.GHL_STAGE_DOCS_SUBMITTED || "",
   stageNoDocs: process.env.GHL_STAGE_NO_DOCS || "",
-  stageNeedsDocs:
-    process.env.GHL_STAGE_NEEDS_DOCS || process.env.GHL_STAGE_INFO_SUBMITTED || "",
+  // This stage is also the durable, application-scoped recovery queue for the
+  // GHL backup notification. Never silently substitute another stage: doing so
+  // could make an abandoned no-document application invisible to that workflow.
+  stageNeedsDocs: process.env.GHL_STAGE_NEEDS_DOCS || "",
   internalNotificationContactId:
     process.env.GHL_INTERNAL_NOTIFICATION_CONTACT_ID || "",
   siteName: process.env.SITE_NAME || "online-tint-exemption",
@@ -136,6 +145,112 @@ export interface ContactInput {
   docUploadChoice: string;
 }
 
+const EXACT_CONTACT_SEARCH_LIMIT = 100;
+
+function responseContactId(json: unknown): string {
+  const value = json as {
+    contact?: { id?: unknown };
+    id?: unknown;
+    contactId?: unknown;
+  };
+  const contactId = value?.contact?.id || value?.id || value?.contactId;
+  return typeof contactId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(contactId)
+    ? contactId
+    : "";
+}
+
+/**
+ * Exact mode never calls HighLevel's ordinary upsert. It searches by the
+ * required primary email, retrieves every candidate, and reuses a record only
+ * when every normalized identity field matches. A nonmatch goes through the
+ * create endpoint, which fails instead of silently merging if the location's
+ * duplicate-contact setting was not actually enabled.
+ */
+async function resolveExactContactId(
+  identity: SubmittedContactIdentity,
+  contactPayload: Record<string, unknown>
+): Promise<string> {
+  return withExactContactIdentityLock(identity, async () => {
+    const searchResponse = await ghlFetch("/contacts/search", {
+      method: "POST",
+      cache: "no-store",
+      body: JSON.stringify({
+        locationId: ghlConfig.locationId,
+        page: 1,
+        pageLimit: EXACT_CONTACT_SEARCH_LIMIT,
+        filters: [{ field: "email", operator: "eq", value: identity.email }],
+      }),
+    });
+    if (!searchResponse.ok) {
+      throw new Error(`GHL exact contact search failed status=${searchResponse.status}`);
+    }
+    const searchJson = await searchResponse.json();
+    const candidates: GhlContactIdentityRecord[] = Array.isArray(searchJson?.contacts)
+      ? searchJson.contacts
+      : [];
+    const candidateIds = candidates.map(responseContactId);
+    const total = Number(searchJson?.total ?? candidates.length);
+    if (
+      candidateIds.some((candidateId) => !candidateId) ||
+      !Number.isSafeInteger(total) ||
+      total < 0 ||
+      total !== candidateIds.length ||
+      candidateIds.length > EXACT_CONTACT_SEARCH_LIMIT
+    ) {
+      throw new Error("GHL exact contact search returned an incomplete result set");
+    }
+
+    const detailedCandidates: GhlContactIdentityRecord[] = [];
+    for (const contactId of [...new Set(candidateIds)]) {
+      const response = await ghlFetch(
+        `/contacts/${encodeURIComponent(contactId)}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) {
+        throw new Error(`GHL exact contact read failed status=${response.status}`);
+      }
+      const json = await response.json();
+      const contact = (json?.contact || json) as GhlContactIdentityRecord;
+      if (responseContactId(contact) !== contactId) {
+        throw new Error("GHL exact contact read returned an invalid id");
+      }
+      detailedCandidates.push(contact);
+    }
+
+    const exactMatches = detailedCandidates.filter((contact) =>
+      matchesExactContactIdentity(contact, identity)
+    );
+    if (exactMatches.length > 1) {
+      throw new Error("GHL exact contact identity is ambiguous");
+    }
+
+    if (exactMatches.length === 1) {
+      const contactId = responseContactId(exactMatches[0]);
+      const updatePayload = { ...contactPayload };
+      delete updatePayload.locationId;
+      const updateResponse = await ghlFetch(
+        `/contacts/${encodeURIComponent(contactId)}`,
+        { method: "PUT", body: JSON.stringify(updatePayload) }
+      );
+      if (!updateResponse.ok) {
+        throw new Error(`GHL exact contact update failed status=${updateResponse.status}`);
+      }
+      return contactId;
+    }
+
+    const createResponse = await ghlFetch("/contacts/", {
+      method: "POST",
+      body: JSON.stringify(contactPayload),
+    });
+    if (!createResponse.ok) {
+      throw new Error(`GHL exact contact create failed status=${createResponse.status}`);
+    }
+    const createdId = responseContactId(await createResponse.json());
+    if (!createdId) throw new Error("GHL exact contact create returned no id");
+    return createdId;
+  });
+}
+
 /**
  * Upsert the lead's contact. Uses /contacts/upsert because the location dedups
  * on phone (a plain POST would 400 for households sharing a number). Returns the
@@ -168,7 +283,7 @@ export async function upsertContact(data: ContactInput): Promise<string> {
     { id: GHL_FIELDS.explainExemption, value: data.details },
   ];
 
-  const upsertPayload = {
+  const contactPayload: Record<string, unknown> = {
     locationId: ghlConfig.locationId,
     firstName: data.firstName,
     lastName: data.lastName,
@@ -186,19 +301,38 @@ export async function upsertContact(data: ContactInput): Promise<string> {
     customFields,
   };
 
-  const res = await ghlFetch("/contacts/upsert", {
-    method: "POST",
-    body: JSON.stringify(upsertPayload),
-  });
+  let contactId: string;
+  if (exactContactReuseEnabled()) {
+    contactId = await resolveExactContactId(
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dateOfBirth,
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2,
+        city: data.city,
+        state: data.stateCode,
+        postalCode: data.postalCode,
+        country: "US",
+      },
+      contactPayload
+    );
+  } else {
+    const res = await ghlFetch("/contacts/upsert", {
+      method: "POST",
+      body: JSON.stringify(contactPayload),
+    });
 
-  if (!res.ok) {
-    throw new Error(`GHL contact upsert failed status=${res.status}`);
-  }
+    if (!res.ok) {
+      throw new Error(`GHL contact upsert failed status=${res.status}`);
+    }
 
-  const upserted = await res.json();
-  const contactId = upserted?.contact?.id || upserted?.id || upserted?.contactId;
-  if (!contactId) {
-    throw new Error("GHL contact upsert returned no id");
+    contactId = responseContactId(await res.json());
+    if (!contactId) {
+      throw new Error("GHL contact upsert returned no id");
+    }
   }
   // Upsert's `tags` field replaces the contact's complete tag list. Always use
   // the dedicated Add Tags endpoint so existing workflow/customer tags survive.
@@ -498,6 +632,17 @@ export async function routeMissingDocsLead(
   if (!requiresDocumentsForPrice(priceDollars)) {
     throw new Error("Missing-document routing requires a valid order price");
   }
+  if (!ghlConfig.stageNeedsDocs) {
+    throw new Error("GHL missing-document stage is not configured");
+  }
+  const incompatibleStages = [
+    ghlConfig.stageInfoSubmitted,
+    ghlConfig.stageDocsSubmitted,
+    ghlConfig.stageNoDocs,
+  ].filter(Boolean);
+  if (incompatibleStages.includes(ghlConfig.stageNeedsDocs)) {
+    throw new Error("GHL missing-document stage must be a dedicated unpaid stage");
+  }
   try {
     await addTagsToContact(contactId, [
       GHL_TAGS.needsDocs,
@@ -506,12 +651,16 @@ export async function routeMissingDocsLead(
   } catch {
     console.error("Missing-doc tag operation failed");
   }
-  if (ghlConfig.stageNeedsDocs) {
-    try {
-      await moveOpportunityStage(opportunityId, ghlConfig.stageNeedsDocs, "open");
-    } catch {
-      console.error("Missing-doc stage operation failed");
-    }
+  const movedToRecoveryStage = await moveOpportunityStage(
+    opportunityId,
+    ghlConfig.stageNeedsDocs,
+    "open"
+  );
+  if (!movedToRecoveryStage) {
+    // A terminal application should never be reclassified as an unpaid lead.
+    // The caller receives a failure instead of falsely reporting that a new
+    // recovery-stage event was created.
+    throw new Error("GHL missing-document opportunity is no longer open");
   }
 
   // Do not enroll a contact-wide recurring nurture here. One GHL contact can

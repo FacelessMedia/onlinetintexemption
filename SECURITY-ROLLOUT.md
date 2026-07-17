@@ -41,9 +41,11 @@ endpoint returns 503 instead of silently running without its required control.
 
 ## Missing-document workflow
 
-- `GHL_STAGE_NEEDS_DOCS`: preferably a dedicated unpaid **Form Filled - No
-  Docs** stage. Until one is safely created, use the existing unpaid
-  information-submitted stage; never use either paid stage.
+- `GHL_STAGE_NEEDS_DOCS`: the exact dedicated unpaid **Docs Needed - Unpaid**
+  stage. There is no fallback to Information Submitted or a paid stage. Intake
+  now fails closed if this value is missing or if the application cannot be
+  moved there, while the already-created GHL contact/opportunity remain
+  available for recovery.
 - `GHL_INTERNAL_NOTIFICATION_CONTACT_ID`: Tory's existing GHL contact ID. The
   app queues a non-PHI GHL email to this contact for every distinct opportunity
   and writes its per-opportunity notification marker only after the API accepts
@@ -52,6 +54,32 @@ endpoint returns 503 instead of silently running without its required control.
   workflow because one contact may have multiple applications. Its owner-safe
   Redis lock deduplicates retries by opportunity while allowing a later,
   genuinely distinct application to notify Tory again.
+
+### Durable backup and reconciliation boundary
+
+Treat the open opportunity in **Docs Needed - Unpaid** as the durable recovery
+queue. Configure one GHL opportunity-stage workflow in the shared location:
+
+1. Trigger only when an open opportunity enters this exact pipeline/stage.
+2. Keep the workflow bound to the triggering opportunity and verify that two
+   opportunities on one contact can be enrolled independently. Do not activate
+   it if the location can only represent contact-wide state.
+3. Wait until the next business-day follow-up window, then continue only if the
+   same opportunity is still open in **Docs Needed - Unpaid**.
+4. Send Tory a backup internal notification containing only the site, a short
+   application reference, and a secure GHL link. Do not include name, contact
+   details, DOB, address, conditions, notes, or uploaded-document data.
+5. Add a saved GHL view for all open opportunities in this stage and review it
+   daily. This is the reconciliation list if either email path is unavailable.
+
+The existing Redis record is an owner-safe send/idempotency marker, not an
+outbox. A Redis outbox was deliberately not added without an approved scheduler,
+retention policy, and provider data-handling decision. A serverless queue with
+no confirmed worker would only look durable; moreover GHL's documented message
+endpoint exposes no application idempotency key, so a crash after provider
+acceptance but before queue acknowledgement could still duplicate an email.
+The GHL opportunity stage is already the authoritative application-scoped
+record and does not copy medical data into a second recovery datastore.
 
 ## Payment and anti-card-testing controls
 
@@ -138,7 +166,9 @@ endpoint returns 503 instead of silently running without its required control.
 2. Test a $225 application without a document and confirm it remains unpaid;
    repeat with a clean document and confirm checkout opens.
 3. Test an application at every offered price with no document and confirm: no Stripe session,
-   open unpaid GHL stage, `needs-docs-followup`, and Tory receives one email.
+   open unpaid GHL stage, `needs-docs-followup`, and Tory receives one direct email.
+   Leave one test opportunity unresolved and confirm the delayed GHL backup
+   notification and daily reconciliation view find that exact opportunity.
 4. Test applications at representative prices with a real clean file and confirm checkout opens.
 5. Test an invalid/malicious file and confirm it never reaches GHL.
 6. Confirm a paid Stripe test event moves the correct opportunity exactly once.

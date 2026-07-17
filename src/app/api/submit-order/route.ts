@@ -126,6 +126,11 @@ export async function POST(request: NextRequest) {
     ["GHL_LOCATION_ID", ghlConfig.locationId],
     ["GHL_PIPELINE_ID", ghlConfig.pipelineId],
     ["GHL_STAGE_INFO_SUBMITTED", ghlConfig.stageInfoSubmitted],
+    ["GHL_STAGE_NEEDS_DOCS", ghlConfig.stageNeedsDocs],
+    [
+      "GHL_INTERNAL_NOTIFICATION_CONTACT_ID",
+      ghlConfig.internalNotificationContactId,
+    ],
     ["ORDER_TOKEN_SECRET", process.env.ORDER_TOKEN_SECRET || ""],
   ].filter(([, value]) => !value);
   if (requiredConfig.length > 0) {
