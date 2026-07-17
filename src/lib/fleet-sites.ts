@@ -2,6 +2,32 @@
  * Checked-in webhook allowlist generated from content_engine/vercel_projects.json.
  * The webhook must never read parent-workspace files at runtime.
  */
+export const NATIONAL_FLEET_SITE_HOSTS = [
+  "onlinetintexemption.com",
+  "tintprescription.com",
+  "windowtintexemption.com",
+  "windowtintmedicalexemption.com",
+  "windowtintprescription.com",
+  "tintwaiver.com",
+  "medicalexemptionforwindowtint.com",
+  "medicalexemptionwindowtint.com",
+  "howtogettintexemption.com",
+  "tintexemption.net",
+] as const;
+
+/** The nine newly generated multi-state sites governed by the new policy matrix. */
+export const NEW_NATIONAL_FLEET_SITE_HOSTS = [
+  "tintprescription.com",
+  "windowtintexemption.com",
+  "windowtintmedicalexemption.com",
+  "windowtintprescription.com",
+  "tintwaiver.com",
+  "medicalexemptionforwindowtint.com",
+  "medicalexemptionwindowtint.com",
+  "howtogettintexemption.com",
+  "tintexemption.net",
+] as const;
+
 export const FLEET_SITE_HOSTS = [
   "arizonatintexemption.com",
   "arkansastintexemption.com",
@@ -31,7 +57,6 @@ export const FLEET_SITE_HOSTS = [
   "njtintexemption.com",
   "ohiotintexemption.com",
   "oklahomatintexemption.com",
-  "onlinetintexemption.com",
   "oregontintexemption.com",
   "patintexemption.com",
   "rhodeislandtintexemption.com",
@@ -45,11 +70,24 @@ export const FLEET_SITE_HOSTS = [
   "westvirginiatintexemption.com",
   "wisconsintintexemption.com",
   "wyomingtintexemption.com",
+  ...NATIONAL_FLEET_SITE_HOSTS,
 ] as const;
 
 const FLEET_SITE_SET = new Set<string>(FLEET_SITE_HOSTS);
 
-const NATIONAL_OFFERED_STATE_SLUGS = [
+/**
+ * States whose canonical prices must remain known for legacy/dedicated-site
+ * reconciliation, but which current legal research does not permit the
+ * national portfolio to admit to a generic checkout.
+ */
+export const NATIONAL_FLEET_BLOCKED_STATE_SLUGS = [
+  "california",
+  "kansas",
+  "oregon",
+  "pennsylvania",
+] as const;
+
+const LEGACY_NATIONAL_OFFERED_STATE_SLUGS = [
   "arizona", "arkansas", "california", "florida", "georgia", "idaho",
   "illinois", "indiana", "kansas", "maryland", "michigan", "minnesota",
   "missouri", "montana", "nevada", "new-jersey", "new-mexico", "new-york",
@@ -57,6 +95,31 @@ const NATIONAL_OFFERED_STATE_SLUGS = [
   "rhode-island", "south-carolina", "tennessee", "texas", "virginia",
   "washington", "washington-dc", "west-virginia", "wisconsin", "wyoming",
 ] as const;
+
+const NATIONAL_OFFERED_STATE_SLUGS = [
+  "arizona", "arkansas", "florida", "georgia", "idaho",
+  "illinois", "indiana", "maryland", "michigan", "minnesota",
+  "missouri", "montana", "nevada", "new-jersey", "new-mexico", "new-york",
+  "north-carolina", "ohio", "oklahoma", "rhode-island", "south-carolina",
+  "tennessee", "texas", "virginia",
+  "washington", "washington-dc", "west-virginia", "wisconsin", "wyoming",
+] as const;
+
+const NATIONAL_FLEET_SITE_STATE_SLUGS: Record<
+  (typeof NATIONAL_FLEET_SITE_HOSTS)[number],
+  readonly string[]
+> = {
+  "onlinetintexemption.com": LEGACY_NATIONAL_OFFERED_STATE_SLUGS,
+  "tintprescription.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "windowtintexemption.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "windowtintmedicalexemption.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "windowtintprescription.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "tintwaiver.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "medicalexemptionforwindowtint.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "medicalexemptionwindowtint.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "howtogettintexemption.com": NATIONAL_OFFERED_STATE_SLUGS,
+  "tintexemption.net": NATIONAL_OFFERED_STATE_SLUGS,
+};
 
 /** Exact source-host to state pairing accepted by the central Stripe webhook. */
 export const FLEET_SITE_STATE_SLUGS = {
@@ -88,7 +151,6 @@ export const FLEET_SITE_STATE_SLUGS = {
   "njtintexemption.com": ["new-jersey"],
   "ohiotintexemption.com": ["ohio"],
   "oklahomatintexemption.com": ["oklahoma"],
-  "onlinetintexemption.com": NATIONAL_OFFERED_STATE_SLUGS,
   "oregontintexemption.com": ["oregon"],
   "patintexemption.com": ["pennsylvania"],
   "rhodeislandtintexemption.com": ["rhode-island"],
@@ -102,6 +164,7 @@ export const FLEET_SITE_STATE_SLUGS = {
   "westvirginiatintexemption.com": ["west-virginia"],
   "wisconsintintexemption.com": ["wisconsin"],
   "wyomingtintexemption.com": ["wyoming"],
+  ...NATIONAL_FLEET_SITE_STATE_SLUGS,
 } as const satisfies Record<(typeof FLEET_SITE_HOSTS)[number], readonly string[]>;
 
 export const FLEET_STATE_PRICES: Readonly<Record<string, number>> = {

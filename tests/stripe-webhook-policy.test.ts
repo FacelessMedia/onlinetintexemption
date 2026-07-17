@@ -51,6 +51,51 @@ test("fleet payment metadata is exact-host, exact-state, and amount bound", () =
   );
 });
 
+test("new national hosts accept only an offered state at the server-owned amount", () => {
+  for (const site of [
+    "https://www.windowtintexemption.com",
+    "https://tintexemption.net",
+  ]) {
+    const context = parseFleetPaymentContext(
+      { ...validMetadata, site },
+      22_500,
+      "usd"
+    );
+    assert.ok(context);
+    assert.equal(context.stateSlug, "texas");
+    assert.equal(context.expectedPrice, 225);
+  }
+
+  assert.throws(() =>
+    parseFleetPaymentContext(
+      { ...validMetadata, site: "windowtintexemption.com", state: "Delaware", state_slug: "delaware" },
+      25_000,
+      "usd"
+    )
+  );
+  for (const [state, stateSlug, amount] of [
+    ["California", "california", 25_000],
+    ["Kansas", "kansas", 25_000],
+    ["Oregon", "oregon", 22_500],
+    ["Pennsylvania", "pennsylvania", 25_000],
+  ] as const) {
+    assert.throws(() =>
+      parseFleetPaymentContext(
+        { ...validMetadata, site: "tintexemption.net", state, state_slug: stateSlug },
+        amount,
+        "usd"
+      )
+    );
+  }
+  assert.throws(() =>
+    parseFleetPaymentContext(
+      { ...validMetadata, site: "tintexemption.net.attacker.example" },
+      22_500,
+      "usd"
+    )
+  );
+});
+
 test("current charge state prevents stale paid events from restoring won", () => {
   assert.equal(
     checkoutChargeDisposition({
