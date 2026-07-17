@@ -19,15 +19,16 @@ export function DocsExplainer() {
           <FileCheck2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
           <div>
             <h2 id="documents-explainer-title" className="text-xl font-semibold text-foreground">
-              What to upload and why it is required
+              What to upload and when it is required
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              A relevant supporting document is required before checkout. It lets
-              the team review the request before payment and state filing.
+              A relevant supporting document is required before checkout for
+              intakes priced at $250 or more. At $225, you may upload a useful
+              record now or continue to payment without one.
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              If you do not have a record ready, you may still submit the intake.
-              No payment is taken; the team follows up about an appropriate record.
+              If a required record is not ready, you may still submit the intake.
+              It is saved without payment so the team can follow up securely.
             </p>
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { legal } from "@/lib/legal";
+import { requiresDocumentsForPrice } from "@/lib/docs-policy";
 import {
   qualifyingConditions,
   durationOptions,
@@ -134,8 +135,8 @@ export function BookingForm({
   const [success, setSuccess] = useState(false);
   // Hosted Stripe Checkout URL returned by /api/create-checkout.
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
-  // Set when an applicant submits WITHOUT docs: we saved them as a lead and
-  // will follow up for documentation — no payment is taken.
+  // Set only when a $250+ applicant submits without docs: the application is
+  // saved for follow-up and Stripe is not opened.
   const [leadOnlyMessage, setLeadOnlyMessage] = useState<string | null>(null);
   const [orderToken, setOrderToken] = useState<string | null>(null);
   const [uploadReceipt, setUploadReceipt] = useState<string | null>(null);
@@ -144,9 +145,9 @@ export function BookingForm({
 
   const fullPrice = `$${price}`;
   const displayPrice = fullPrice;
-  // Every order is gated on documentation. The server enforces this invariant;
-  // this constant only controls the matching up-front experience.
-  const requiresDocs = true;
+  // This mirrors the server-owned rule for the customer experience. The API
+  // independently derives the policy from its own trusted price table.
+  const requiresDocs = requiresDocumentsForPrice(price);
   const isLeadOnlyPath =
     requiresDocs && form.docUploadChoice === "later";
 
@@ -307,11 +308,10 @@ export function BookingForm({
 
   function handleStep2Submit() {
     if (!form.acknowledgesDocumentation || !form.docUploadChoice) return;
-    // The "upload now" path must include at least one file —
-    // payment is gated on documentation. (The "later" path is allowed: it
-    // becomes a no-charge follow-up lead.)
+    // "Upload now" must actually include a file so we never tell an applicant
+    // a document was submitted when it was not. At $225 they can instead choose
+    // "without docs" and continue to payment; at $250+ that becomes follow-up.
     if (
-      requiresDocs &&
       form.docUploadChoice === "now" &&
       uploadedDocs.length === 0
     ) {
@@ -976,9 +976,9 @@ export function BookingForm({
                   <li className="flex items-start gap-2">
                     <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                     <span>
-                      MyEyeRx requires a secure document upload before payment for
-                      every order as part of its review process. This is an
-                      operational review rule, not a statement of state law.
+                      {requiresDocs
+                        ? `Because this intake is ${displayPrice}, MyEyeRx requires a secure document upload before payment. This is an operational review rule, not a statement of state law.`
+                        : `For this ${displayPrice} intake, documents are optional before payment. You may upload a useful record now or continue without one; the reviewing provider may still request more information later.`}
                     </span>
                   </li>
                 </ul>
@@ -1039,13 +1039,20 @@ export function BookingForm({
               Upload Your Documentation
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              MyEyeRx&apos;s review process requires a secure document upload before
-              payment for every order.{" "}
-              <strong className="text-foreground">
-                Upload it now to continue to payment
-              </strong>
-              , or submit without it and we&apos;ll follow up — you won&apos;t be
-              charged until we receive your documents.
+              {requiresDocs ? (
+                <>
+                  This {displayPrice} intake requires a secure document upload
+                  before payment. <strong className="text-foreground">Upload it
+                  now to continue to payment</strong>, or submit without it and
+                  we&apos;ll follow up—no payment will be taken yet.
+                </>
+              ) : (
+                <>
+                  Documents are optional for this {displayPrice} intake. Upload a
+                  useful record now, or continue without documents and proceed to
+                  secure payment.
+                </>
+              )}
             </p>
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -1081,7 +1088,9 @@ export function BookingForm({
                     Submit Without Docs
                   </span>
                   <span className="block text-xs text-muted-foreground">
-                    We follow up — no charge now
+                    {requiresDocs
+                      ? "We follow up — no charge now"
+                      : "Continue to secure payment"}
                   </span>
                 </div>
               </button>
@@ -1145,11 +1154,19 @@ export function BookingForm({
             {form.docUploadChoice === "later" && (
               <div className="mt-4 rounded-lg border border-secondary/30 bg-secondary/10 p-3">
                 <p className="text-sm text-foreground">
-                  We&apos;ll save your application and contact you with a secure
-                  upload option. Do not send records by ordinary email.{" "}
-                  <strong>
-                    No payment is taken until your documents are received.
-                  </strong>
+                  {requiresDocs ? (
+                    <>
+                      We&apos;ll save your application and contact you with a secure
+                      upload option. Do not send records by ordinary email.{" "}
+                      <strong>No payment is taken until your documents are received.</strong>
+                    </>
+                  ) : (
+                    <>
+                      You may continue to secure payment without documents for
+                      this {displayPrice} intake. The reviewing provider may ask
+                      for additional information later. Do not email medical records.
+                    </>
+                  )}
                 </p>
               </div>
             )}
@@ -1171,8 +1188,9 @@ export function BookingForm({
                 Selecting a condition does not guarantee qualification or approval.
                 An independent licensed provider will review my application and may
                 request more information. I will submit records only through the
-                secure uploader. Payment cannot begin until the system confirms a
-                current-application document upload.
+                secure uploader. {requiresDocs
+                  ? "Payment cannot begin until the system confirms a current-application document upload."
+                  : "I may continue without documents at this price, but additional information may be requested later."}
               </span>
             </label>
           </div>
@@ -1192,8 +1210,7 @@ export function BookingForm({
               disabled={
                 !form.acknowledgesDocumentation ||
                 !form.docUploadChoice ||
-                (requiresDocs &&
-                  form.docUploadChoice === "now" &&
+                (form.docUploadChoice === "now" &&
                   uploadedDocs.length === 0)
               }
               className="order-1 flex flex-1 items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:order-2"

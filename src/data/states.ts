@@ -110,7 +110,9 @@ function buildStateFaq(
   allowsMedicalExemption = true,
 ): StateData["faq"] {
   const serviceAnswer = offered
-    ? `The listed intake price is $${price}. A relevant supporting document is required before checkout for every order. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
+    ? price >= 250
+      ? `The listed intake price is $${price}. Because the price is $250 or more, a relevant current-application document must be securely received before checkout. An intake without one is saved unpaid for team follow-up. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
+      : `The listed intake price is $${price}. Documents are optional before checkout at this price: you may upload a useful record or continue to payment without one. The reviewing provider may still request more information later. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
     : `OnlineTintExemption is not currently accepting paid intake for ${stateName}. Contact the responsible state agency or a qualified local professional for current options.`;
 
   return [

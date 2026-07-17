@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   checkoutChargeDisposition,
   disputeDisposition,
+  paidStageForContext,
   parseFleetPaymentContext,
   refundDisposition,
   safeTelemetryCode,
@@ -48,6 +49,48 @@ test("fleet payment metadata is exact-host, exact-state, and amount bound", () =
       22_500,
       "usd"
     )
+  );
+});
+
+test("webhook policy recognizes both legitimate $225 and legacy $250 no-doc payments", () => {
+  const ordinaryNoDocs = parseFleetPaymentContext(
+    validMetadata,
+    22_500,
+    "usd"
+  );
+  assert.ok(ordinaryNoDocs);
+  assert.equal(
+    paidStageForContext(ordinaryNoDocs, {
+      docsSubmitted: "paid-docs",
+      noDocs: "paid-no-docs",
+    }),
+    "paid-no-docs"
+  );
+
+  const californiaMetadata = {
+    ...validMetadata,
+    site: "https://www.californiatintexemption.com",
+    state: "California",
+    state_slug: "california",
+  };
+  const legacyNoDocs = parseFleetPaymentContext(
+    californiaMetadata,
+    25_000,
+    "usd"
+  );
+  assert.equal(legacyNoDocs?.hasCurrentSubmissionDocs, false);
+  const requiredDocs = parseFleetPaymentContext(
+      { ...californiaMetadata, docs_current_submission: "yes" },
+      25_000,
+      "usd"
+    );
+  assert.ok(requiredDocs);
+  assert.equal(
+    paidStageForContext(requiredDocs, {
+      docsSubmitted: "paid-docs",
+      noDocs: "paid-no-docs",
+    }),
+    "paid-docs"
   );
 });
 

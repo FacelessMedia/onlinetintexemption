@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: "Privacy Policy for Online Tint Exemption. Learn how we collect, use, and protect your personal information.",
 };
 
+const supportChatEnabled =
+  process.env.NEXT_PUBLIC_SUPPORT_CHAT_ENABLED === "true";
+
 export default function PrivacyPolicyPage() {
   return (
     <section className="bg-background py-16 sm:py-20">
@@ -21,7 +24,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="space-y-6 text-muted-foreground leading-relaxed">
           <p><strong className="text-foreground">Effective Date:</strong> January 1, 2026</p>
-          <p><strong className="text-foreground">Last Updated:</strong> July 14, 2026</p>
+          <p><strong className="text-foreground">Last Updated:</strong> July 17, 2026</p>
 
           <p>
             Online Tint Exemption (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects your privacy and is committed to
@@ -70,6 +73,15 @@ export default function PrivacyPolicyPage() {
             <li>GoHighLevel for intake and customer-relationship operations</li>
             <li>Stripe for eligible payment processing</li>
             <li>Document-security and malware-scanning providers that inspect uploads before they enter our records platform</li>
+            {supportChatEnabled && (
+              <li>
+                OpenAI for the optional automated support chat. Text typed into
+                that chat may be processed under the applicable OpenAI service
+                terms and account data controls. Do not enter medical records,
+                dates of birth, addresses, payment details, or other sensitive
+                personal information in chat.
+              </li>
+            )}
             <li>Hosting, security, and support vendors acting on our instructions</li>
             <li>As required by law or legal process</li>
           </ul>

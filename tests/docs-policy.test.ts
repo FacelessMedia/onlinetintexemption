@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { requiresDocumentsForPrice } from "../src/lib/docs-policy.ts";
 
-test("every valid order price requires current-application documents", () => {
-  assert.equal(requiresDocumentsForPrice(1), true);
-  assert.equal(requiresDocumentsForPrice(225), true);
-  assert.equal(requiresDocumentsForPrice(249), true);
+test("documents become mandatory at the $250 checkout threshold", () => {
+  assert.equal(requiresDocumentsForPrice(1), false);
+  assert.equal(requiresDocumentsForPrice(225), false);
+  assert.equal(requiresDocumentsForPrice(249), false);
   assert.equal(requiresDocumentsForPrice(250), true);
   assert.equal(requiresDocumentsForPrice(350), true);
 });

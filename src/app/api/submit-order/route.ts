@@ -121,16 +121,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const priceDollars = stateData.price;
+  const requiresDocs = requiresDocumentsForPrice(priceDollars);
   const requiredConfig = [
     ["GHL_API_KEY", ghlConfig.apiKey],
     ["GHL_LOCATION_ID", ghlConfig.locationId],
     ["GHL_PIPELINE_ID", ghlConfig.pipelineId],
     ["GHL_STAGE_INFO_SUBMITTED", ghlConfig.stageInfoSubmitted],
-    ["GHL_STAGE_NEEDS_DOCS", ghlConfig.stageNeedsDocs],
-    [
-      "GHL_INTERNAL_NOTIFICATION_CONTACT_ID",
-      ghlConfig.internalNotificationContactId,
-    ],
+    ...(requiresDocs
+      ? [
+          ["GHL_STAGE_NEEDS_DOCS", ghlConfig.stageNeedsDocs],
+          [
+            "GHL_INTERNAL_NOTIFICATION_CONTACT_ID",
+            ghlConfig.internalNotificationContactId,
+          ],
+        ]
+      : []),
     ["ORDER_TOKEN_SECRET", process.env.ORDER_TOKEN_SECRET || ""],
   ].filter(([, value]) => !value);
   if (requiredConfig.length > 0) {
@@ -143,9 +149,6 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   }
-
-  const priceDollars = stateData.price;
-  const requiresDocs = requiresDocumentsForPrice(priceDollars);
 
   try {
     // No checkout is possible unless both the contact and opportunity exist.
@@ -264,9 +267,8 @@ export async function POST(request: NextRequest) {
       `${ghlConfig.siteName}:${stateData.slug}:${submissionReference}:${opportunityId}`
     );
 
-    // "Upload later" remains a saved, unpaid lead at every price. "Upload now"
-    // receives the token only after the alert above and may proceed through the
-    // secure upload.
+    // "Upload later" is a saved, unpaid lead only at $250+. At $225 the same
+    // complete intake receives a token and may continue to Stripe without docs.
     if (requiresDocs && body.docUploadChoice === "later") {
       return NextResponse.json({
         success: true,

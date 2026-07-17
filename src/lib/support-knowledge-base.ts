@@ -4,6 +4,7 @@ import {
   SUPPORT_EMAIL,
   SUPPORT_PHONE_DISPLAY,
 } from "@/lib/support-chat-guards";
+import { requiresDocumentsForPrice } from "@/lib/docs-policy";
 
 export interface SupportStateContext {
   name: string;
@@ -30,8 +31,10 @@ SCREENING
 - The applicant must answer honestly and complete required intake fields. The independent provider makes the final clinical decision.
 
 DOCUMENTS AND PAYMENT
-- Every applicant must provide a relevant supporting document before checkout can begin, regardless of price.
-- An applicant without a document may still submit the completed intake. No payment is taken; the intake remains unpaid while the MyEyeRx team reviews the selected condition category and follows up about an appropriate record and secure upload.
+- Every applicant must provide condition, identity, date-of-birth, address, email, and phone information requested by the secure intake.
+- At $225, supporting documents are optional before payment. The applicant may upload a document or continue to Stripe without one.
+- At $250 or more, a successfully received current-application document is mandatory before Stripe can begin.
+- A $250-or-more applicant without a document may still submit the completed intake. No payment is taken; the intake remains unpaid while MyEyeRx reviews the selected condition category and follows up about an appropriate record and secure upload.
 - Choosing upload now is not proof. Only a successfully received file counts.
 - Payment is complete only after Stripe confirms it. A success-page URL alone is not proof.
 
@@ -46,9 +49,9 @@ GENERALLY USEFUL DOCUMENTS
 AFTER INTAKE
 1. The applicant completes screening and intake.
 2. The application is saved in an access-controlled system.
-3. An intake without a document remains unpaid and the team follows up with a secure-upload option.
-4. Once a supporting document is securely received, Stripe hosts checkout and confirms payment to the server.
-5. MyEyeRx reviews the submitted material before state filing. The team may request more information and does not send an application it believes lacks the required support.
+3. At $225, the applicant may continue to Stripe with or without documents. Paid applications are routed according to whether a current document was submitted.
+4. At $250 or more, an intake without a document remains unpaid and the team follows up with a secure-upload option; Stripe opens only after the required upload is confirmed.
+5. MyEyeRx reviews the submitted information and any records before state filing. The team may request more information and does not send an application it believes lacks the required support.
 6. MyEyeRx coordinates next steps with an independent licensed provider, who may approve, deny, or request more information.
 7. State-specific submission or delivery steps are communicated after clinical review. The provider and state remain independent decision-makers, so no outcome is guaranteed.
 
@@ -61,8 +64,11 @@ REFUNDS, LAW, AND STATE QUESTIONS
 export function buildSupportInstructions(
   state: SupportStateContext | null
 ): string {
+  const stateRequiresDocs = state
+    ? requiresDocumentsForPrice(state.price)
+    : null;
   const stateContext = state
-    ? `CURRENT STATE CONTEXT\n- Selected state: ${state.name}\n- Current server price: $${state.price}\n- Secure booking path: ${state.bookingPath || `/book/${state.slug}`}\n- These are the only approved state-specific facts. Do not infer state law or documentation requirements.`
+    ? `CURRENT STATE CONTEXT\n- Selected state: ${state.name}\n- Current server price: $${state.price}\n- Secure booking path: ${state.bookingPath || `/book/${state.slug}`}\n- Document-before-payment policy: ${stateRequiresDocs ? "required because this price is $250 or more" : "optional because this price is below $250"}\n- These are the only approved state-specific facts. Do not infer state law or other documentation requirements.`
     : "CURRENT STATE CONTEXT\n- No valid state is selected. Do not quote a price. Ask the visitor to select a state or contact MyEyeRx.";
 
   return `You are the automated MyEyeRx tint-exemption support assistant. Clearly identify as automated when relevant.

@@ -310,7 +310,7 @@ test("an open-stage token replay cannot move a won opportunity", async () => {
   }
 });
 
-test("a $225 missing-doc alert remains single-send and pending until GHL accepts it", async () => {
+test("a $250 missing-doc alert remains single-send and pending until GHL accepts it", async () => {
   const mutableEnv = process.env as Record<string, string | undefined>;
   const originalUrl = mutableEnv.UPSTASH_REDIS_REST_URL;
   const originalToken = mutableEnv.UPSTASH_REDIS_REST_TOKEN;
@@ -396,7 +396,7 @@ test("a $225 missing-doc alert remains single-send and pending until GHL accepts
       "contact-race",
       sharedOpportunityId,
       "Texas",
-      225
+      250
     );
     await emailStarted;
     // Both calls use the same application id; the second must not interpret
@@ -405,7 +405,7 @@ test("a $225 missing-doc alert remains single-send and pending until GHL accepts
       "contact-race",
       sharedOpportunityId,
       "Texas",
-      225
+      250
     );
     assert.equal(second.emailQueued, false);
     assert.equal(emailCalls, 1);
@@ -464,7 +464,7 @@ test("missing-doc routing fails closed when its durable GHL stage cannot be writ
         "contact-stage-failure",
         opportunityId,
         "Texas",
-        225
+        250
       ),
       /GHL move opportunity failed status=503/
     );
@@ -490,11 +490,23 @@ test("missing-doc routing rejects reuse of another lifecycle stage", async () =>
         "contact-stage-collision",
         `opportunity-stage-collision-${crypto.randomUUID()}`,
         "Texas",
-        225
+        250
       ),
       /dedicated unpaid stage/
     );
   } finally {
     Object.assign(ghlConfig, originalConfig);
   }
+});
+
+test("a $225 order cannot enter the unpaid required-document route", async () => {
+  await assert.rejects(
+    routeMissingDocsLead(
+      "contact-optional-docs",
+      `opportunity-optional-docs-${crypto.randomUUID()}`,
+      "Texas",
+      225
+    ),
+    /only valid for \$250\+ orders/
+  );
 });

@@ -37,12 +37,13 @@ export default function RefundPolicyPage() {
 
           <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-5">
             <h2 className="text-lg font-bold text-foreground">
-              Documents Are Required Before Payment
+              When Documents Are Required Before Payment
             </h2>
             <p className="mt-2">
-              Stripe checkout cannot begin until the secure intake confirms a
-              current-application document upload. If you are unsure what record
-              may be useful, call{" "}
+              For $225 intakes, supporting documents are optional before payment.
+              For intakes priced at $250 or more, Stripe checkout cannot begin
+              until the secure intake confirms a current-application document
+              upload. If you are unsure what record may be useful, call{" "}
               <a
                 href="tel:+17343389453"
                 className="font-semibold text-primary hover:underline"

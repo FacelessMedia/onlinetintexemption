@@ -14,6 +14,7 @@ import {
   completeStripeEvent,
   releaseStripeEvent,
 } from "@/lib/idempotency";
+import { requiresDocumentsForPrice } from "@/lib/docs-policy";
 import { securityConfigurationErrors } from "@/lib/request-security";
 import {
   checkoutChargeDisposition,
@@ -250,11 +251,10 @@ async function handleCheckoutCompleted(
   }
 
   const hasDocs = context.hasCurrentSubmissionDocs;
-  // New checkout sessions cannot be created without current-application proof.
-  // Keep the no-document branch for already-open legacy sessions: fulfill the
-  // paid customer, route the exact opportunity for follow-up, and alert Tory
-  // instead of losing the customer or silently misclassifying the payment.
-  if (!hasDocs) {
+  // $225/no-doc is an ordinary paid path. A $250+ no-doc payment can only be a
+  // legacy or anomalous Session because current checkout creation blocks it.
+  // Preserve and route that paid customer, but alert Tory for manual recovery.
+  if (requiresDocumentsForPrice(context.expectedPrice) && !hasDocs) {
     const notification = await routeMissingDocsLead(
       context.contactId,
       context.opportunityId,
@@ -272,7 +272,7 @@ async function handleCheckoutCompleted(
     style: "currency",
     currency: "USD",
   });
-  const anomaly = !hasDocs
+  const anomaly = requiresDocumentsForPrice(context.expectedPrice) && !hasDocs
     ? " | alert=current application document proof missing"
     : "";
   return telemetry(

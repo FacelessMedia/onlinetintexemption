@@ -57,7 +57,7 @@ npm run build    # production build (135 static pages)
 - **Brand:** Online Tint Exemption
 - **Email:** support@onlinetintexemption.com
 - **Phone:** 734-338-9453
-- **Pricing:** State-specific server configuration; every order requires a fresh current-application document before checkout
+- **Pricing:** State-specific server configuration; documents are optional at $225 and mandatory before checkout at $250+
 - **No HIPAA claims** — removed per compliance requirement
 
 ## Page Count: 135 Static Pages

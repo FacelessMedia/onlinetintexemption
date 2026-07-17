@@ -630,7 +630,7 @@ export async function routeMissingDocsLead(
   priceDollars: number
 ): Promise<{ workflowQueued: boolean; emailQueued: boolean }> {
   if (!requiresDocumentsForPrice(priceDollars)) {
-    throw new Error("Missing-document routing requires a valid order price");
+    throw new Error("Missing-document routing is only valid for $250+ orders");
   }
   if (!ghlConfig.stageNeedsDocs) {
     throw new Error("GHL missing-document stage is not configured");

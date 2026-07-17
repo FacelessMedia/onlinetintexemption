@@ -130,12 +130,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Validates the server-owned price and applies the code-owned all-orders
-    // document policy. Keep this check server-side even though the form mirrors
-    // it for the customer experience.
-    if (!requiresDocumentsForPrice(state.price)) {
-      throw new Error("Checkout document policy is unavailable");
-    }
+    // The server-owned price decides the policy. Never accept a client-provided
+    // amount or client-provided statement about whether documents are required.
+    const requiresDocs = requiresDocumentsForPrice(state.price);
     let receiptConfirmed = false;
     if (parsed.data.uploadReceipt) {
       try {
@@ -150,7 +147,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!receiptConfirmed) {
+    if (requiresDocs && !receiptConfirmed) {
       const notification = await routeMissingDocsLead(
         order.contactId,
         order.opportunityId,
@@ -178,43 +175,47 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // A signed receipt proves this order completed an upload, while the GHL
-    // FILE_UPLOAD read proves the file was accepted into the CRM. Require both
-    // before opening Stripe at every price.
-    let hasDocs = false;
-    try {
-      hasDocs = await contactHasDocs(order.contactId);
-      if (!hasDocs) {
-        // GHL can be briefly eventually consistent after upload. Poll, but
-        // never trust the browser or receipt alone as proof of the stored file.
-        for (const delay of [500, 1_000, 1_500]) {
-          await sleep(delay);
-          hasDocs = await contactHasDocs(order.contactId);
-          if (hasDocs) break;
+    // The upload route issues this signed, order-bound receipt only after the
+    // scanner accepts the file and GHL accepts the upload. For $225 orders that
+    // receipt is enough to classify paid routing without turning an optional
+    // document into a payment blocker. At $250+, also read the GHL FILE_UPLOAD
+    // field and confirm the exact opportunity is out of the recovery stage.
+    const hasCurrentDocs = receiptConfirmed;
+    if (requiresDocs) {
+      let hasPersistedDocs = false;
+      try {
+        hasPersistedDocs = await contactHasDocs(order.contactId);
+        if (!hasPersistedDocs) {
+          // GHL can be briefly eventually consistent after upload. Poll, but
+          // never trust the browser or receipt alone for the mandatory gate.
+          for (const delay of [500, 1_000, 1_500]) {
+            await sleep(delay);
+            hasPersistedDocs = await contactHasDocs(order.contactId);
+            if (hasPersistedDocs) break;
+          }
         }
+      } catch {
+        return pendingDocumentConfirmation();
       }
-    } catch {
-      return pendingDocumentConfirmation();
-    }
 
-    if (receiptConfirmed && !hasDocs) {
-      // A valid fresh-upload receipt means this is propagation delay, not a
-      // no-document lead. Let the browser retry this same signed order.
-      return pendingDocumentConfirmation();
-    }
+      if (!hasPersistedDocs) {
+        // A valid fresh-upload receipt means this is propagation delay, not a
+        // no-document lead. Let the browser retry this same signed order.
+        return pendingDocumentConfirmation();
+      }
 
-    // The upload route attempts this transition immediately, but checkout owns
-    // the final clean-data invariant. Never open Stripe while this exact
-    // opportunity can still be parked in Docs Needed; a 202 lets the browser
-    // retry without asking the customer to upload the medical file again.
-    try {
-      await moveOpportunityStage(
-        order.opportunityId,
-        ghlConfig.stageInfoSubmitted,
-        "open"
-      );
-    } catch {
-      return pendingApplicationStatusConfirmation();
+      // The upload route attempts this transition immediately, but checkout
+      // owns the final $250+ invariant. A 202 lets the browser retry without
+      // asking the customer to upload the medical file again.
+      try {
+        await moveOpportunityStage(
+          order.opportunityId,
+          ghlConfig.stageInfoSubmitted,
+          "open"
+        );
+      } catch {
+        return pendingApplicationStatusConfirmation();
+      }
     }
 
     const canonicalOrigin = getCanonicalOrigin();
@@ -256,8 +257,8 @@ export async function POST(request: NextRequest) {
       state_slug: state.slug,
       ghl_contact_id: order.contactId,
       ghl_opportunity_id: order.opportunityId,
-      docs: "yes",
-      docs_current_submission: "yes",
+      docs: hasCurrentDocs ? "yes" : "no",
+      docs_current_submission: hasCurrentDocs ? "yes" : "no",
       order_jti: order.jti,
     };
 

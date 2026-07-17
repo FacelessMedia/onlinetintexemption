@@ -13,9 +13,10 @@ endpoint returns 503 instead of silently running without its required control.
   reuse it across unrelated applications. Rotating it invalidates open forms.
 - `UPLOAD_RECEIPT_SECRET`: optional separate 32+ character secret for the
   short-lived, order-bound proof of a successful file upload. If omitted,
-  `ORDER_TOKEN_SECRET` is used. Every checkout requires this receipt
-  and a fresh server read of the GHL file field; an older file on an upserted
-  contact is not enough.
+  `ORDER_TOKEN_SECRET` is used. At $250+, checkout requires this receipt and a
+  fresh server read of the GHL file field; an older file on an upserted contact
+  is not enough. At $225, no receipt is required and metadata records whether a
+  current upload actually succeeded.
 - `RATE_LIMIT_HASH_SECRET`: optional dedicated secret for HMAC-hashing rate
   limit identifiers. If omitted, `ORDER_TOKEN_SECRET` is used.
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`: matching
@@ -43,13 +44,13 @@ endpoint returns 503 instead of silently running without its required control.
 
 - `GHL_STAGE_NEEDS_DOCS`: the exact dedicated unpaid **Docs Needed - Unpaid**
   stage. There is no fallback to Information Submitted or a paid stage. Intake
-  now fails closed if this value is missing or if the application cannot be
-  moved there, while the already-created GHL contact/opportunity remain
-  available for recovery.
+  at $250+ fails closed if this value is missing or if the application cannot
+  be moved there, while the already-created GHL contact/opportunity remains
+  available for recovery. A $225 no-document order does not use this stage.
 - `GHL_INTERNAL_NOTIFICATION_CONTACT_ID`: Tory's existing GHL contact ID. The
-  app queues a non-PHI GHL email to this contact for every distinct opportunity
-  and writes its per-opportunity notification marker only after the API accepts
-  the email.
+  app queues a non-PHI GHL email for every distinct $250+ opportunity that is
+  still missing documents and writes its per-opportunity notification marker
+  only after the API accepts the email.
 - The app deliberately avoids direct enrollment in a contact-wide recurring
   workflow because one contact may have multiple applications. Its owner-safe
   Redis lock deduplicates retries by opportunity while allowing a later,
@@ -163,10 +164,13 @@ record and does not copy medical data into a second recovery datastore.
 ## Activation checklist
 
 1. Configure all variables in a preview deployment.
-2. Test a $225 application without a document and confirm it remains unpaid;
-   repeat with a clean document and confirm checkout opens.
-3. Test an application at every offered price with no document and confirm: no Stripe session,
-   open unpaid GHL stage, `needs-docs-followup`, and Tory receives one direct email.
+2. Test a $225 application without a document and confirm Stripe opens with
+   `docs_current_submission=no`; after a successful test payment, confirm the
+   webhook routes it to Paid - No Docs. Repeat with a clean document and confirm
+   it routes to Paid - Docs Submitted.
+3. Test every $250+ offered price with no document and confirm: no Stripe
+   session, open unpaid GHL stage, `needs-docs-followup`, and Tory receives one
+   direct email.
    Leave one test opportunity unresolved and confirm the delayed GHL backup
    notification and daily reconciliation view find that exact opportunity.
 4. Test applications at representative prices with a real clean file and confirm checkout opens.

@@ -52,7 +52,7 @@ export default function BookHub() {
                 Supporting Records and Secure Handling
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                A relevant supporting document is required before checkout for every order. Useful records commonly show your name, the treating clinician or facility, and the relevant condition, symptoms, surgery, or treatment; a brief surgery letter on facility letterhead may also help. Upload records only through the secure intake—not ordinary email or chat. An intake without records is saved for team follow-up and is not sent to Stripe. Payment and review do not guarantee documentation, approval, state acceptance, or timing. Refunds are governed by the{" "}
+                Supporting documents are optional before checkout for $225 intakes and required before checkout for intakes priced at $250 or more. Useful records commonly show your name, the treating clinician or facility, and the relevant condition, symptoms, surgery, or treatment; a brief surgery letter on facility letterhead may also help. Upload records only through the secure intake—not ordinary email or chat. A $250-or-more intake without records is saved for team follow-up and is not sent to Stripe. Payment and review do not guarantee documentation, approval, state acceptance, or timing. Refunds are governed by the{" "}
                 <Link href="/refund-policy" className="font-medium text-primary hover:underline">published refund policy</Link>.
               </p>
             </div>
