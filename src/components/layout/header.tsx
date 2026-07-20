@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, ChevronDown, Phone, Shield } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
-import { cn } from "@/lib/utils";
 
 const popularStates = [
   { name: "Texas", slug: "texas" },

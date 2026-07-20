@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  ChevronRight,
   AlertTriangle,
   ClipboardList,
   FileCheck,

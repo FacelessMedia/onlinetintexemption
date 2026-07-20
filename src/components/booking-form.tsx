@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useRef } from "react";
 import {
   ArrowRight,
@@ -118,7 +119,6 @@ export function BookingForm({
   stateName,
   stateSlug,
   price,
-  originalPrice,
 }: BookingFormProps) {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormData>(initialFormData);
@@ -1447,13 +1447,13 @@ export function BookingForm({
                     />
                     <span className="text-muted-foreground">
                       I agree to the{" "}
-                      <a href="/privacy-policy" className="text-primary underline">
+                      <Link href="/privacy-policy" className="text-primary underline">
                         Privacy Policy
-                      </a>{" "}
+                      </Link>{" "}
                       and{" "}
-                      <a href="/refund-policy" className="text-primary underline">
+                      <Link href="/refund-policy" className="text-primary underline">
                         Refund Policy
-                      </a>
+                      </Link>
                       . By providing my phone number and email, I agree to
                       receive communications regarding my application.
                     </span>
