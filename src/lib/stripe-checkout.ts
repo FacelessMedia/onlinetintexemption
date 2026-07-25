@@ -17,6 +17,7 @@
  * mismatch; the account's default API version is used.
  */
 import Stripe from "stripe";
+import { REFUND_FEE_CHECKOUT_MESSAGE } from "./refund-fee.ts";
 
 let _stripe: Stripe | null = null;
 
@@ -98,6 +99,9 @@ export async function createStripeCheckoutSession(
       payment_intent_data: {
         metadata,
         receipt_email: input.customer?.email || undefined,
+      },
+      custom_text: {
+        submit: { message: REFUND_FEE_CHECKOUT_MESSAGE },
       },
       allow_promotion_codes: false,
     },
