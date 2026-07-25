@@ -82,11 +82,11 @@ export function Footer() {
                 Tory@myeyerx.net
               </a>
               <a
-                href="tel:+17343389453"
+                href="tel:+17343388453"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Phone className="h-4 w-4" />
-                (734) 338-9453
+                (734) 338-8453
               </a>
             </div>
           </div>

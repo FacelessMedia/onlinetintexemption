@@ -62,7 +62,7 @@ export const generatedPosts: BlogPost[] = [
   <li>Follow the state-specific submission, carrying, or renewal instructions that apply.</li>
   <li>Ask a qualified installer to follow the limits stated by current law and any valid documentation.</li>
 </ol>
-<p>For general process questions, contact MyEyeRx at <a href="tel:+17343389453">734-338-9453</a> or <a href="mailto:Tory@myeyerx.net">Tory@myeyerx.net</a>. Do not email medical records.</p>`,
+<p>For general process questions, contact MyEyeRx at <a href="tel:+17343388453">734-338-8453</a> or <a href="mailto:Tory@myeyerx.net">Tory@myeyerx.net</a>. Do not email medical records.</p>`,
     faqs: [
       {
         question: "Which conditions qualify for a medical tint exemption?",
@@ -141,7 +141,7 @@ export const generatedPosts: BlogPost[] = [
   <li>Check your state's current official medical-tint requirements.</li>
   <li>Use the <a href="/book">secure intake</a> if you want an independent provider review coordinated through MyEyeRx.</li>
 </ol>
-<p>For general document-process questions, call MyEyeRx at <a href="tel:+17343389453">734-338-9453</a> or email <a href="mailto:Tory@myeyerx.net">Tory@myeyerx.net</a>. Do not email medical records.</p>`,
+<p>For general document-process questions, call MyEyeRx at <a href="tel:+17343388453">734-338-8453</a> or email <a href="mailto:Tory@myeyerx.net">Tory@myeyerx.net</a>. Do not email medical records.</p>`,
     faqs: [
       {
         question: "Do cataracts automatically qualify for a tint exemption?",

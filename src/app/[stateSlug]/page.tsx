@@ -95,7 +95,7 @@ export default async function StatePage({ params }: PageProps) {
         "@type": "Organization",
         name: "Online Tint Exemption",
         url: "https://www.onlinetintexemption.com",
-        telephone: "+1-734-338-9453",
+        telephone: "+1-734-338-8453",
       },
       ...(state.offered ? {
         offers: {

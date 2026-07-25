@@ -1,8 +1,8 @@
 import { FileCheck2, FileText, Phone, ShieldCheck } from "lucide-react";
 import { validatedDocsExplainerVideoUrl } from "@/lib/docs-explainer-video";
 
-const SUPPORT_PHONE_DISPLAY = "734-338-9453";
-const SUPPORT_PHONE_HREF = "tel:+17343389453";
+const SUPPORT_PHONE_DISPLAY = "734-338-8453";
+const SUPPORT_PHONE_HREF = "tel:+17343388453";
 
 export function DocsExplainer() {
   const videoUrl = validatedDocsExplainerVideoUrl(

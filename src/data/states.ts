@@ -111,7 +111,7 @@ function buildStateFaq(
 ): StateData["faq"] {
   const serviceAnswer = offered
     ? `The listed intake price is $${price}. A relevant supporting document is required before checkout for every order. Payment covers the intake and coordination service; it does not guarantee clinical approval, issuance of documentation, state acceptance, or a particular tint allowance.`
-    : `OnlineTintExemption is not currently accepting paid intake for ${stateName}. Contact the responsible state agency or a qualified local professional for current options.`;
+    : `Online Tint Exemption is not currently accepting paid intake for ${stateName}. Contact the responsible state agency or a qualified local professional for current options.`;
 
   return [
     { question: `How do I know whether I qualify in ${stateName}?`, answer: allowsMedicalExemption ? `Check ${stateName}'s current official eligibility standard, then complete an individualized clinical review. A condition named on this site may be relevant, but no diagnosis automatically qualifies and no outcome is guaranteed.` : `Our current service table does not list an available medical window-tint pathway for ${stateName}. Verify the current rule directly with the responsible state agency because requirements can change.` },

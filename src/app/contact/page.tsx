@@ -16,8 +16,8 @@ const methods = [
     icon: Phone,
     title: "Call MyEyeRx",
     description: "Questions about documents, intake, or next steps",
-    action: "734-338-9453",
-    href: "tel:+17343389453",
+    action: "734-338-8453",
+    href: "tel:+17343388453",
   },
   {
     icon: Mail,

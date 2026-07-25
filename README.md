@@ -56,7 +56,7 @@ npm run build    # production build (135 static pages)
 
 - **Brand:** Online Tint Exemption
 - **Email:** support@onlinetintexemption.com
-- **Phone:** 734-338-9453
+- **Phone:** 734-338-8453
 - **Pricing:** State-specific server configuration; every order requires a fresh current-application document before checkout
 - **No HIPAA claims** — removed per compliance requirement
 

@@ -56,7 +56,7 @@ export function USMap() {
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm bg-green-500" />
-          <span className="text-muted-foreground">Available Through OnlineTintExemption</span>
+          <span className="text-muted-foreground">Available Through Online Tint Exemption</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm bg-yellow-500" />
@@ -188,15 +188,15 @@ export function USMap() {
                 </div>
               )}
             </div>
-            {/* OnlineTintExemption service status */}
+            {/* Online Tint Exemption service status */}
             <div className={`mt-3 pt-2 border-t border-border text-xs font-semibold ${
               hoveredState.offered ? "text-emerald-400" : "text-muted-foreground"
             }`}>
               {hoveredState.offered
-                ? `OnlineTintExemption — $${hoveredState.price} • Click for details →`
+                ? `Online Tint Exemption — $${hoveredState.price} • Click for details →`
                 : !hoveredState.allowsMedicalExemption
-                ? "OnlineTintExemption — Not available in this state"
-                : "OnlineTintExemption — Contact your DMV for exemption info"}
+                ? "Online Tint Exemption — Not available in this state"
+                : "Online Tint Exemption — Contact your DMV for exemption info"}
             </div>
           </div>
         </div>

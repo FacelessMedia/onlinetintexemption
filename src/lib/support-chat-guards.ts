@@ -1,5 +1,5 @@
-export const SUPPORT_PHONE_DISPLAY = "734-338-9453";
-export const SUPPORT_PHONE_HREF = "tel:+17343389453";
+export const SUPPORT_PHONE_DISPLAY = "734-338-8453";
+export const SUPPORT_PHONE_HREF = "tel:+17343388453";
 export const SUPPORT_EMAIL = "Tory@myeyerx.net";
 
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
