@@ -132,6 +132,7 @@ export function BookingForm({
   price,
 }: BookingFormProps) {
   const [step, setStep] = useState<Step>(1);
+  const flowRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<FormData>(initialFormData);
   const formStartedAt = useRef(Date.now()).current;
   const submissionId = useRef(crypto.randomUUID()).current;
@@ -158,6 +159,11 @@ export function BookingForm({
   const requiresDocs = true;
   const isLeadOnlyPath =
     requiresDocs && form.docUploadChoice === "later";
+
+  function goToStep(nextStep: Step) {
+    setStep(nextStep);
+    flowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -199,8 +205,7 @@ export function BookingForm({
       );
       return;
     }
-    setStep(2);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    goToStep(2);
   }
 
   // Files are held in browser memory during Step 2, then uploaded after the
@@ -326,8 +331,7 @@ export function BookingForm({
     ) {
       return;
     }
-    setStep(3);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    goToStep(3);
   }
 
   async function handleStep3Submit(e: React.FormEvent) {
@@ -690,11 +694,37 @@ export function BookingForm({
   }
 
   return (
-    <div className="relative mx-auto max-w-4xl">
+    <div ref={flowRef} className="relative mx-auto max-w-4xl scroll-mt-24">
       <PurchasePauseGate />
       {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              Guided application
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              Step {step} of 3
+            </p>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground">
+            {Math.round((step / 3) * 100)}% complete
+          </p>
+        </div>
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label="Application progress"
+          aria-valuemin={1}
+          aria-valuemax={3}
+          aria-valuenow={step}
+        >
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${(step / 3) * 100}%` }}
+          />
+        </div>
+        <div className="mt-4 flex items-center justify-between">
           {[
             { num: 1, label: "Initial Screen", Icon: Stethoscope },
             { num: 2, label: "Documentation", Icon: Shield },
@@ -724,7 +754,10 @@ export function BookingForm({
                     step >= s.num ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
-                  {s.label}
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Step {s.num}
+                  </span>
+                  <span className="block">{s.label}</span>
                 </span>
               </div>
               {i < 2 && (
@@ -957,6 +990,22 @@ export function BookingForm({
             </p>
           </div>
 
+          <details className="rounded-xl border border-border bg-muted/20">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-foreground">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold">Need help choosing a document?</span>
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    View examples and review details
+                  </span>
+                </span>
+              </span>
+              <span className="shrink-0 text-xs font-semibold text-muted-foreground">Open guide</span>
+            </summary>
+            <div className="px-4 pb-4">
           {/* Documentation and review notice */}
           <div className="mb-6 rounded-lg border-2 border-red-500/40 bg-red-500/10 p-5">
             <div className="flex items-start gap-3">
@@ -1043,10 +1092,13 @@ export function BookingForm({
             ))}
           </div>
 
+            </div>
+          </details>
+
           {/* Upload Docs Section */}
-          <div className="mt-6">
+          <div className="mt-5 rounded-xl border border-border bg-background p-4 sm:p-5">
             <h3 className="text-base font-bold text-foreground">
-              Upload Your Documentation
+              Choose How to Continue
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
               MyEyeRx&apos;s review process requires a secure document upload before
@@ -1191,7 +1243,7 @@ export function BookingForm({
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={() => setStep(1)}
+              onClick={() => goToStep(1)}
               className="order-2 inline-flex items-center justify-center rounded-lg border border-border bg-background px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 sm:order-1"
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -1208,7 +1260,7 @@ export function BookingForm({
               }
               className="order-1 flex flex-1 items-center justify-center rounded-lg bg-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:order-2"
             >
-              Continue <ArrowRight className="ml-2 h-5 w-5" />
+              Continue to Step 3 <ArrowRight className="ml-2 h-5 w-5" />
             </button>
           </div>
         </div>
@@ -1651,7 +1703,7 @@ export function BookingForm({
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => goToStep(2)}
                     className="order-2 inline-flex items-center justify-center rounded-lg border border-border bg-background px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 sm:order-1"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back
