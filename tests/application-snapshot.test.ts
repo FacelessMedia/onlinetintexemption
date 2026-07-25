@@ -13,7 +13,7 @@ const snapshot = {
   firstName: "Test",
   lastName: "Customer",
   email: "customer@example.test",
-  phone: "7343389453",
+  phone: "7343388453",
   dateOfBirth: "1980-01-02",
   addressLine1: "123 Main St",
   city: "Austin",

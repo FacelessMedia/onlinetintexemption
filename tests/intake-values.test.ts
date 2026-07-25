@@ -14,7 +14,7 @@ test("date of birth validation rejects impossible calendar dates", () => {
 });
 
 test("US phone normalization produces one consistent E.164-like value", () => {
-  assert.equal(normalizeUsPhone("(734) 338-9453"), "+17343389453");
-  assert.equal(normalizeUsPhone("1-734-338-9453"), "+17343389453");
-  assert.equal(normalizeUsPhone("7343389453123"), null);
+  assert.equal(normalizeUsPhone("(734) 338-8453"), "+17343388453");
+  assert.equal(normalizeUsPhone("1-734-338-8453"), "+17343388453");
+  assert.equal(normalizeUsPhone("7343388453123"), null);
 });

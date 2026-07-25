@@ -18,7 +18,7 @@ const order = {
   firstName: "Test",
   lastName: "Applicant",
   email: "test@example.com",
-  phone: "+17343389453",
+  phone: "+17343388453",
 };
 
 test("same scoped submission receives the same Stripe idempotency JTI", () => {

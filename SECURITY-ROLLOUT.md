@@ -149,7 +149,7 @@ record and does not copy medical data into a second recovery datastore.
 - The checked-in customer knowledge base is intentionally conservative. The
   assistant may use only that material plus the current server-resolved state
   name and price; unknown, clinical, approval, or legal questions are handed to
-  MyEyeRx at 734-338-9453 or Tory@myeyerx.net.
+  MyEyeRx at 734-338-8453 or Tory@myeyerx.net.
 
 ## Upload lifecycle
 
