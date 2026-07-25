@@ -144,7 +144,7 @@ const faqItems = [
   },
   {
     q: "What if I don't qualify?",
-    a: "Qualification is not guaranteed. Review the current refund policy before purchase or contact MyEyeRx at 734-338-9453 for an answer about your specific situation.",
+    a: "Qualification is not guaranteed. Review the current refund policy before purchase or contact MyEyeRx at 734-338-8453 for an answer about your specific situation.",
   },
   {
     q: "Is a medical tint exemption legal?",
@@ -175,7 +175,7 @@ export default function Home() {
     logo: "https://www.onlinetintexemption.com/logo.png",
     description:
       "State-specific education and secure intake for medical window tint exemption reviews, officially partnered with MyEyeRx.",
-    telephone: "+1-734-338-9453",
+    telephone: "+1-734-338-8453",
     email: "Tory@myeyerx.net",
     founder: {
       "@type": "Person",

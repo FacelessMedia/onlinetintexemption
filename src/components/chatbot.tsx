@@ -10,8 +10,8 @@ const SUPPORT_CHAT_ENABLED =
 const TURNSTILE_ENABLED = Boolean(
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 );
-const SUPPORT_PHONE_DISPLAY = "734-338-9453";
-const SUPPORT_PHONE_HREF = "tel:+17343389453";
+const SUPPORT_PHONE_DISPLAY = "734-338-8453";
+const SUPPORT_PHONE_HREF = "tel:+17343388453";
 const SUPPORT_EMAIL = "Tory@myeyerx.net";
 const QUICK_QUESTIONS = [
   "What documents can I upload?",

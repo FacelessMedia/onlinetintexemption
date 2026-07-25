@@ -24,7 +24,7 @@ const faqItems = [
   },
   {
     q: "What if I don't qualify?",
-    a: "Qualification is not guaranteed. Review the current Refund Policy before paying or call MyEyeRx at 734-338-9453 for help understanding how the policy applies.",
+    a: "Qualification is not guaranteed. Review the current Refund Policy before paying or call MyEyeRx at 734-338-8453 for help understanding how the policy applies.",
   },
   {
     q: "Is a medical tint exemption legal?",

@@ -44,10 +44,10 @@ export default function RefundPolicyPage() {
               current-application document upload. If you are unsure what record
               may be useful, call{" "}
               <a
-                href="tel:+17343389453"
+                href="tel:+17343388453"
                 className="font-semibold text-primary hover:underline"
               >
-                (734) 338-9453
+                (734) 338-8453
               </a>{" "}
               before paying. The team can explain common document types and the
               secure-upload process, but only an independent licensed clinician
@@ -120,10 +120,10 @@ export default function RefundPolicyPage() {
             <li>
               Phone:{" "}
               <a
-                href="tel:+17343389453"
+                href="tel:+17343388453"
                 className="text-primary hover:underline"
               >
-                (734) 338-9453
+                (734) 338-8453
               </a>
             </li>
           </ul>

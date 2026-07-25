@@ -34,11 +34,11 @@ export function Header() {
       <div className="bg-primary/10 text-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between py-1.5">
           <a
-            href="tel:+17343389453"
+            href="tel:+17343388453"
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone className="h-3.5 w-3.5" />
-            <span>Questions? Call (734) 338-9453</span>
+            <span>Questions? Call (734) 338-8453</span>
           </a>
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />
