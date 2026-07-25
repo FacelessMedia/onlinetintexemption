@@ -28,6 +28,13 @@ import {
   passesInitialScreening,
 } from "@/lib/prequalification";
 import { PurchasePauseGate } from "@/components/purchase-pause";
+import {
+  REFUND_FEE_AVOIDANCE,
+  REFUND_FEE_DISPLAY,
+  REFUND_FEE_NOTICE,
+  REFUND_FEE_PHONE_DISPLAY,
+  REFUND_FEE_PHONE_HREF,
+} from "@/lib/refund-fee";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 
 const SITE_NAME = "Online Tint Exemption";
@@ -72,6 +79,7 @@ interface FormData {
   numberOfVehicles: string;
   howDidYouHear: string;
   agreeToTerms: boolean;
+  acknowledgesRefundFee: boolean;
   agreesToLiability: boolean;
   website: string;
 }
@@ -104,6 +112,7 @@ const initialFormData: FormData = {
   numberOfVehicles: "",
   howDidYouHear: "",
   agreeToTerms: false,
+  acknowledgesRefundFee: false,
   agreesToLiability: false,
   website: "",
 };
@@ -368,6 +377,7 @@ export function BookingForm({
           docUploadChoice: form.docUploadChoice,
           acknowledgesDocumentation: form.acknowledgesDocumentation,
           agreeToTerms: form.agreeToTerms,
+          acknowledgesRefundFee: form.acknowledgesRefundFee,
           agreesToLiability: form.agreesToLiability,
           botToken: botToken || undefined,
           website: form.website,
@@ -1596,6 +1606,28 @@ export function BookingForm({
                       receive communications regarding my application.
                     </span>
                   </label>
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-4 text-xs hover:bg-amber-100">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={form.acknowledgesRefundFee}
+                      onChange={(e) =>
+                        updateField("acknowledgesRefundFee", e.target.checked)
+                      }
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-amber-500 text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="text-gray-800">
+                      <strong>{REFUND_FEE_NOTICE}</strong> I understand and agree
+                      that if I request a refund for any reason, a {REFUND_FEE_DISPLAY}{" "}
+                      refund processing fee will be deducted. To avoid this, I can
+                      call{" "}
+                      <a href={REFUND_FEE_PHONE_HREF} className="font-semibold text-amber-800 underline">
+                        {REFUND_FEE_PHONE_DISPLAY}
+                      </a>{" "}
+                      before paying to confirm I have everything needed to proceed.
+                    </span>
+                  </label>
                 </div>
 
                 <div className="hidden" aria-hidden="true">
@@ -1629,6 +1661,7 @@ export function BookingForm({
                     disabled={
                       loading ||
                       !form.agreeToTerms ||
+                      !form.acknowledgesRefundFee ||
                       !form.agreesToLiability ||
                       !form.dateOfBirth ||
                       !form.addressLine1 ||
@@ -1707,6 +1740,10 @@ export function BookingForm({
                         {isLeadOnlyPath ? "$0" : displayPrice}
                       </span>
                     </div>
+                  </div>
+                  <div className="rounded-md border border-amber-400 bg-amber-50 p-3 text-xs text-gray-800">
+                    <strong>{REFUND_FEE_NOTICE}</strong>{" "}
+                    {REFUND_FEE_AVOIDANCE}
                   </div>
                 </div>
               </div>

@@ -63,6 +63,7 @@ export const submitOrderSchema = z
     acknowledgesDocumentation: z.literal(true),
     agreeToTerms: z.literal(true),
     agreesToLiability: z.literal(true),
+    acknowledgesRefundFee: z.literal(true),
     botToken: z.string().max(2_048).optional(),
     website: z.string().max(0).optional().default(""),
     formStartedAt: z.number().int().positive(),

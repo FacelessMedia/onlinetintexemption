@@ -34,6 +34,22 @@ export default function RefundPolicyPage() {
             <strong className="text-foreground">Last Updated:</strong> July 14,
             2026
           </p>
+          <div className="rounded-lg border-2 border-amber-500 bg-amber-50 p-5">
+            <h2 className="text-lg font-bold text-gray-900">
+              $25 Refund Processing Fee — Applies to ALL Refunds
+            </h2>
+            <p className="mt-2 text-gray-800">
+              A $25 refund processing fee applies to every refund, regardless of
+              the reason, and is deducted from the refunded amount. You must
+              acknowledge this fee before payment. Want to avoid it? Call{" "}
+              <a href="tel:+17343388453" className="font-semibold underline">
+                (734) 338-8453
+              </a>{" "}
+              before paying and our team will confirm you have everything needed
+              to proceed.
+            </p>
+          </div>
+
 
           <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-5">
             <h2 className="text-lg font-bold text-foreground">
