@@ -13,7 +13,7 @@
 // ===========================================================================
 import { useState } from "react";
 
-export const PURCHASE_PAUSED = true;
+export const PURCHASE_PAUSED = false;
 
 export const PAUSE_MESSAGE =
   "We’re sorry for the inconvenience — we are not accepting new patients at this time, and online purchases are temporarily unavailable.";
