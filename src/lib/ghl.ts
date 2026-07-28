@@ -377,6 +377,67 @@ export async function removeTagFromContact(contactId: string, tag: string) {
   }
 }
 
+async function reuseSoleOpenOpportunity(
+  createResponse: Response,
+  input: {
+    contactId: string;
+    name: string;
+    priceDollars: number;
+    stageId: string;
+    status: "open" | "won" | "lost";
+  }
+): Promise<string | null> {
+  let body: { code?: unknown; meta?: { existingId?: unknown } } | null = null;
+  try {
+    body = await createResponse.clone().json();
+  } catch {
+    return null;
+  }
+  if (body?.code !== "OPPORTUNITY_NO_DUPLICATE") return null;
+  const existingId = body?.meta?.existingId;
+  if (typeof existingId !== "string" || !existingId) return null;
+
+  // Only reuse a record that is provably this contact's open opportunity. A
+  // terminal (won/lost) record must never be silently repurposed.
+  const currentResponse = await ghlFetch(
+    `/opportunities/${encodeURIComponent(existingId)}`,
+    { cache: "no-store", headers: { Version: "v3", Accept: "application/json" } }
+  );
+  if (!currentResponse.ok) {
+    throw new Error(
+      `GHL opportunity reuse read failed status=${currentResponse.status}`
+    );
+  }
+  const currentJson = await currentResponse.json();
+  const current = currentJson?.opportunity || currentJson;
+  const currentStatus =
+    typeof current?.status === "string" ? current.status.toLowerCase() : "";
+  if (current?.contactId !== input.contactId || currentStatus !== "open") {
+    return null;
+  }
+
+  const updatePayload: Record<string, unknown> = {
+    name: input.name,
+    monetaryValue: input.priceDollars,
+    status: input.status,
+  };
+  if (input.stageId) updatePayload.pipelineStageId = input.stageId;
+  const updateResponse = await ghlFetch(
+    `/opportunities/${encodeURIComponent(existingId)}`,
+    {
+      method: "PUT",
+      headers: { Version: "v3", Accept: "application/json" },
+      body: JSON.stringify(updatePayload),
+    }
+  );
+  if (!updateResponse.ok) {
+    throw new Error(
+      `GHL opportunity reuse update failed status=${updateResponse.status}`
+    );
+  }
+  return existingId;
+}
+
 /** Create a distinct opportunity for every form submission. */
 export async function createOpportunity(
   contactId: string,
@@ -417,6 +478,17 @@ export async function createOpportunity(
       submissionReference
     ).catch(() => null);
     if (racedOpportunityId) return racedOpportunityId;
+    // The location can forbid a second opportunity per contact
+    // (OPPORTUNITY_NO_DUPLICATE). A returning applicant then still deserves a
+    // working intake, so reuse their sole open opportunity for this submission.
+    const reusedOpportunityId = await reuseSoleOpenOpportunity(res, {
+      contactId,
+      name: `${name} [${submissionReference}]`,
+      priceDollars,
+      stageId,
+      status,
+    }).catch(() => null);
+    if (reusedOpportunityId) return reusedOpportunityId;
     throw new Error(`GHL opportunity creation failed status=${res.status}`);
   }
   const json = await res.json();
