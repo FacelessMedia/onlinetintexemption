@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { ChevronRight } from "lucide-react";
 import { getStateBySlug, getAllStates } from "@/data/states";
 import { BookingForm } from "@/components/booking-form";
-import { DocsExplainer } from "@/components/docs-explainer";
 
 interface PageProps {
   params: Promise<{ stateSlug: string }>;
@@ -44,7 +43,7 @@ export default async function BookStatePage({ params }: PageProps) {
             <span className="text-foreground">{state.name}</span>
           </div>
 
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-6xl">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
               {state.name} Tint Exemption
             </h1>
@@ -56,7 +55,6 @@ export default async function BookStatePage({ params }: PageProps) {
             </p>
 
             <div className="mt-8">
-              <DocsExplainer />
               <BookingForm
                 stateName={state.name}
                 stateSlug={state.slug}

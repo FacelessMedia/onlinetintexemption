@@ -36,6 +36,7 @@ import {
   REFUND_FEE_PHONE_HREF,
 } from "@/lib/refund-fee";
 import { TurnstileWidget } from "@/components/turnstile-widget";
+import { DocsExplainer } from "@/components/docs-explainer";
 
 const SITE_NAME = "Online Tint Exemption";
 
@@ -694,7 +695,7 @@ export function BookingForm({
   }
 
   return (
-    <div ref={flowRef} className="relative mx-auto max-w-4xl scroll-mt-24">
+    <div ref={flowRef} className="relative mx-auto max-w-6xl scroll-mt-24">
       <PurchasePauseGate />
       {/* Progress Bar */}
       <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
@@ -978,6 +979,7 @@ export function BookingForm({
       {/* STEP 2 — Documentation Check */}
       {step === 2 && (
         <div className={cardClass}>
+          <DocsExplainer />
           {/* Initial screening result — never a clinical approval. */}
           <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-5 text-center">
             <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
