@@ -878,12 +878,12 @@ export function BookingForm({
               {[
                 {
                   key: "hasSeenDoctor" as const,
-                  label: "Have you seen another doctor about this issue?",
+                  label: "Have you seen another doctor about this issue? *",
                 },
                 {
                   key: "hasTintedBefore" as const,
                   label:
-                    "Have you driven a car with tinted windows before? (Note: window tint can restrict visibility in low light conditions.)",
+                    "Have you driven a car with tinted windows before? (Note: window tint can restrict visibility in low light conditions.) *",
                 },
                 {
                   key: "isLicensedDriver" as const,
@@ -962,6 +962,8 @@ export function BookingForm({
                 form.conditions.length === 0 ||
                 !form.duration ||
                 !form.frequency ||
+                !form.hasSeenDoctor ||
+                !form.hasTintedBefore ||
                 !form.isLicensedDriver ||
                 !form.isIntendedDriver
               }
