@@ -14,6 +14,8 @@ const SUPPORT_PHONE_DISPLAY = "734-338-8453";
 const SUPPORT_PHONE_HREF = "tel:+17343388453";
 const SUPPORT_EMAIL = "Tory@myeyerx.net";
 const QUICK_QUESTIONS = [
+  "How much does it cost?",
+  "How long does the process take?",
   "What documents can I upload?",
   "Why are documents required?",
   "What happens after I submit?",
@@ -98,7 +100,7 @@ export function Chatbot() {
       if (!response.ok || !body.reply) {
         throw new Error(
           body.error ||
-            `Automated support is unavailable. Call ${SUPPORT_PHONE_DISPLAY} or email ${SUPPORT_EMAIL}.`
+            `Automated support is unavailable. Call ${SUPPORT_PHONE_DISPLAY} and ask for Tory, or email ${SUPPORT_EMAIL}.`
         );
       }
       setMessages((current) => [
@@ -109,7 +111,7 @@ export function Chatbot() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : `Automated support is unavailable. Call ${SUPPORT_PHONE_DISPLAY} or email ${SUPPORT_EMAIL}.`
+          : `Automated support is unavailable. Call ${SUPPORT_PHONE_DISPLAY} and ask for Tory, or email ${SUPPORT_EMAIL}.`
       );
     } finally {
       setLoading(false);

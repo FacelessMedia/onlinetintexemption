@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY || "";
-  const model = process.env.OPENAI_SUPPORT_MODEL?.trim() || "gpt-4.1";
+  const model = process.env.OPENAI_SUPPORT_MODEL?.trim() || "gpt-4.1-mini";
   if (!apiKey) {
     console.error("Support chat OpenAI configuration is incomplete");
     return NextResponse.json(
@@ -212,5 +212,5 @@ function extractOutputText(body: OpenAIResponseBody): string {
 }
 
 function humanHandoff(prefix: string): string {
-  return `${prefix} Call ${SUPPORT_PHONE_DISPLAY} or email ${SUPPORT_EMAIL}.`;
+  return `${prefix} Call ${SUPPORT_PHONE_DISPLAY} and ask for Tory, or email ${SUPPORT_EMAIL}.`;
 }
