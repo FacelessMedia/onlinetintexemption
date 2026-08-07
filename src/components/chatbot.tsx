@@ -77,7 +77,7 @@ export function Chatbot() {
     const message = input.trim();
     if (!SUPPORT_CHAT_ENABLED || !message || loading) return;
     if (TURNSTILE_ENABLED && !botToken) {
-      setError("Complete the security check before sending a message.");
+      setError("One moment — finishing a quick security check. Please try again in a few seconds.");
       return;
     }
 
@@ -244,6 +244,7 @@ export function Chatbot() {
                   <TurnstileWidget
                     onToken={setBotToken}
                     resetKey={turnstileResetKey}
+                    appearance="interaction-only"
                   />
                   <div className="flex items-end gap-2">
                   <div className="min-w-0 flex-1">
